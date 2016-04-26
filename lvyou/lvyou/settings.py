@@ -14,6 +14,15 @@ BOT_NAME = 'lvyou'
 SPIDER_MODULES = ['lvyou.spiders']
 NEWSPIDER_MODULE = 'lvyou.spiders'
 
+DOWNLOADER_MIDDLEWARES = {
+    'scrapy.downloadermiddlewares.useragent.UserAgentMiddleware' : None,
+    'lvyou.middlewares.rotate_useragent.RotateUserAgentMiddleware' : 400
+}
+
+DOWNLOAD_TIMEOUT = 5
+DOWNLOAD_DELAY = 0.3
+RANDOMIZE_DOWNLOAD_DELAY =  True
+
 
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
 #USER_AGENT = 'lvyou (+http://www.yourdomain.com)'
