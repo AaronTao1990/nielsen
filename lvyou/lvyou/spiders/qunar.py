@@ -84,7 +84,6 @@ class QunarBBSSpider(scrapy.Spider):
             meta['second_class'] = gonglue_item[1]
             for page in range(gonglue_item[3]):
                 yield Request(gonglue_item[2] % (page + 1), meta=meta, headers=self.HEADERS, dont_filter=True, callback=self.parse_list)
-                return
 
     def parse_list(self, response):
         meta = response.meta
