@@ -277,6 +277,9 @@ class BaiduMudidiGonglueSpider(scrapy.Spider):
                 favorite_count = item.get('favorite_count')
                 days = item.get('days')
                 result = {
+                    'first_class' : meta['first_class'],
+                    'second_class' : meta['second_class'],
+                    'third_class' : meta['third_class'],
                     'title' : title,
                     'author' : author,
                     'destinations' : destinations,
