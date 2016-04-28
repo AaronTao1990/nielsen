@@ -187,13 +187,16 @@ class LvmamaJingdianSpider(scrapy.Spider):
 
     HEADERS = {
         'Host' : 'www.lvmama.com',
+        'Cache-Control' : 'max-age=0',
         'Accept' : 'application/json, text/javascript, */*; q=0.01',
-        'Accept-Encoding' : 'gzip, deflate',
-        'Content-Type' : 'application/x-www-form-urlencoded; charset=UTF-8',
         'Origin' : 'http://www.lvmama.com',
+        'X-Requested-With' : 'XMLHttpRequest',
+        'Content-Type' : 'application/x-www-form-urlencoded; charset=UTF-8',
+        'Accept-Encoding' : 'gzip, deflate',
         'Accept-Language' : 'en-US,en;q=0.8,zh-CN;q=0.6,zh;q=0.4,zh-TW;q=0.2,ja;q=0.2'
     }
 
+    jingdian_post_api = 'http://www.lvmama.com/lvyou/dest_content/AjaxGetViewSpotList'
 
     def __gen_request(self, meta, page, dest_id, request_uri, callback):
         formdata = {
@@ -203,9 +206,7 @@ class LvmamaJingdianSpider(scrapy.Spider):
             'request_uri' : request_uri,
             'type' : 'scenery'
         }
-        url = 'http://www.lvmama.com/lvyou/dest_content/AjaxGetViewSpotList'
-        #url = 'http://localhost:5000/lvyou/dest_content/AjaxGetViewSpotList'
-        return FormRequest(url, headers=self.HEADERS, formdata=formdata, meta=meta, callback=callback)
+        return FormRequest(self.jingdian_post_api, headers=self.HEADERS, formdata=formdata, meta=meta, callback=callback)
 
     def start_requests(self):
         for jingdian_item in self.jingdian_api:
@@ -215,6 +216,9 @@ class LvmamaJingdianSpider(scrapy.Spider):
             meta['request_uri'] = jingdian_item[2]
             meta['dest_id'] = jingdian_item[3]
             meta['first_page'] = True
+            referer = 'http://www.lvmama.com' + jingdian_item[2]
+            meta['referer'] = referer
+            self.HEADERS.update({'Referer' : referer})
             yield self.__gen_request(meta, 1, jingdian_item[3], jingdian_item[2], self.parse)
 
     def parse(self, response):
@@ -250,9 +254,9 @@ class LvmamaJingdianSpider(scrapy.Spider):
                 pages = None
                 if len(page_links) > 2:
                     pages = page_links[-2].xpath('./text()').extract_first()
-                #print '-----------%s------------' % pages
                 if pages:
                     for page in range(int(pages)-1):
+                        self.HEADERS.update({'Referer' : meta['referer']})
                         yield self.__gen_request(meta, page+2, meta['dest_id'], meta['request_uri'], self.parse)
                 else:
                     self.logger.error('failed to get pages for item : %s' % response.url)
