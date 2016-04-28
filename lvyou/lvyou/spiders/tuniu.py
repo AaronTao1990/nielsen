@@ -9,17 +9,32 @@ class TuniuSpider(scrapy.Spider):
     name = "tuniu_youji"
 
     youji_api = ('http://trips.tuniu.com/travelthread/t/0/%d/0', 281)
+    comment_api = 'http://www.tuniu.com/yii.php?r=trips/notesAjax/getreplylist'
 
     HEADERS = {
         'Host' : 'trips.tuniu.com',
         'Accept' : 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
         'Accept-Encoding' : 'gzip, deflate, sdch',
-        'Accept-Language' : 'en-US,en;q=0.8,zh-CN;q=0.6,zh;q=0.4,zh-TW;q=0.2,ja;q=0.2'
+        'Accept-Language' : 'en-US,en;q=0.8,zh-CN;q=0.6,zh;q=0.4,zh-TW;q=0.2,ja;q=0.2',
+        'Referer' : 'http://trips.tuniu.com/'
+    }
+
+    COMMENT_HEADERS = {
+        'Accept' : 'application/json, text/javascript, */*; q=0.01',
+        'Accept-Encoding' : 'gzip, deflate',
+        'Accept-Language' : 'en-US,en;q=0.8,zh-CN;q=0.6,zh;q=0.4,zh-TW;q=0.2,ja;q=0.2',
+        'Cache-Control' : 'max-age=0',
+        'Connection' : 'keep-alive',
+        'Content-Type' : 'application/x-www-form-urlencoded; charset=UTF-8',
+        'Host' : 'www.tuniu.com',
+        'Origin' : 'http://www.tuniu.com',
+        'X-Requested-With' : 'XMLHttpRequest'
     }
 
     def start_requests(self):
         for page in range(self.youji_api[1]):
             yield Request(self.youji_api[0] % (page + 1), headers=self.HEADERS, dont_filter=True, callback=self.parse_youji)
+            self.HEADERS.update({'Referer' : self.youji_api[0] % (page)})
 
     def parse_youji(self, response):
         selector = Selector(response)
@@ -49,7 +64,6 @@ class TuniuSpider(scrapy.Spider):
                 'date' : date
             }
             if comment_count != '0':
-                comment_api = 'http://www.tuniu.com/yii.php?r=trips/notesAjax/getreplylist'
                 meta = response.meta.copy()
                 meta['result'] = result
 
@@ -58,14 +72,14 @@ class TuniuSpider(scrapy.Spider):
                     self.logger.error('failed to extract travel_id for url : %s' %  url)
                     continue
                 travelId = travel_id_match.group(1)
-                self.logger.info('travel id : %s' % travelId)
                 formdata = {
                     'travelId' : travelId,
                     'page' : '1',
                     'IsLookAuthor' : '0',
                     'ReplyPageSize' : '30'
                 }
-                yield FormRequest(comment_api, headers=self.HEADERS.update({'Referer' : url}), formdata=formdata, meta=meta, callback=self.parse_comments)
+                self.COMMENT_HEADERS.update({'Referer' : url})
+                yield FormRequest(self.comment_api, headers=self.COMMENT_HEADERS, formdata=formdata, meta=meta, callback=self.parse_comments)
 
 
     def parse_comments(self, response):
