@@ -20,7 +20,6 @@ class TuniuSpider(scrapy.Spider):
     def start_requests(self):
         for page in range(self.youji_api[1]):
             yield Request(self.youji_api[0] % (page + 1), headers=self.HEADERS, dont_filter=True, callback=self.parse_youji)
-            return
 
     def parse_youji(self, response):
         selector = Selector(response)
