@@ -29,7 +29,6 @@ class QyerQYSpider(scrapy.Spider):
                 'overway' : ''
             }
             yield FormRequest(self.qiongyour_api[0], formdata=formdata, headers=self.POST_HEADERS, callback=self.parse_qiongyou)
-            return
 
     def parse_qiongyou(self, response):
         try:
