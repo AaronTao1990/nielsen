@@ -24,12 +24,12 @@ class LYSpider(scrapy.Spider):
 
     def parse_gonglue(self, response):
         selector = Selector(response)
-        for gonglue in selector.xpath('//ul[@class="gonglueList clearfix"]/li'):
-            title = gonglue.xpath('./a[@class="gonglueNameTit"]/@title').extract_first()
-            author = gonglue.xpath('./div[@class="gonglueSource clearfix"]/a[@class="personName"]/@title').extract_first()
-            view_count = gonglue.xpath('./div[@class="gonglueSource clearfix"]/span[@class="lookNub"]/text()').extract_first()
-            like_count = gonglue.xpath('./div[@class="gonglueSource clearfix"]/span[@class="likeNub"]/text()').extract_first()
-            url = gonglue.xpath('./a[@class="gongluePic"]/@href').extract_first()
+        for gonglue in selector.xpath('//ul[@class="youjiList clearfix"]/li'):
+            title = gonglue.xpath('./a[@class="youjiNameTit"]/@title').extract_first()
+            author = gonglue.xpath('./div[@class="youjiSource clearfix"]/a[@class="personName"]/@title').extract_first()
+            view_count = gonglue.xpath('./div[@class="youjiSource clearfix"]/span[@class="lookNub"]/text()').extract_first()
+            like_count = gonglue.xpath('./div[@class="youjiSource clearfix"]/span[@class="likeNub"]/text()').extract_first()
+            url = gonglue.xpath('./a[@class="youjiPic"]/@href').extract_first()
 
             result = {
                 'title' : title,
