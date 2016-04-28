@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import scrapy
-from scrapy.http import Request
+from scrapy.http import Request, FormRequest
 from scrapy.selector import Selector
 import json
 import re
@@ -19,10 +19,10 @@ class TuniuSpider(scrapy.Spider):
 
     def start_requests(self):
         for page in range(self.youji_api[1]):
-            yield Request(self.youji_api[0] % (page + 1), headers=self.HEADERS, dont_filter=True)
+            yield Request(self.youji_api[0] % (page + 1), headers=self.HEADERS, dont_filter=True, callback=self.parse_youji)
             return
 
-    def parse(self, response):
+    def parse_youji(self, response):
         selector = Selector(response)
         for youji in selector.xpath('//div[@class="hot-main-square clearfix"]'):
             title = youji.xpath('./div[@class="hot-main-up"]/a/@title').extract_first()
@@ -49,7 +49,53 @@ class TuniuSpider(scrapy.Spider):
                 'author' : author,
                 'date' : date
             }
-            self.logger.info('qunar gonglue : %s' % json.dumps(result, ensure_ascii=False).encode('utf-8'))
+            if comment_count != '0':
+                comment_api = 'http://www.tuniu.com/yii.php?r=trips/notesAjax/getreplylist'
+                meta = response.meta.copy()
+                meta['result'] = result
+
+                travel_id_match = re.match('^.*trips/(\d+).*$', url)
+                if not travel_id_match:
+                    self.logger.error('failed to extract travel_id for url : %s' %  url)
+                    continue
+                travelId = travel_id_match.group(1)
+                self.logger.info('travel id : %s' % travelId)
+                formdata = {
+                    'travelId' : travelId,
+                    'page' : '1',
+                    'IsLookAuthor' : '0',
+                    'ReplyPageSize' : '30'
+                }
+                yield FormRequest(comment_api, headers=self.HEADERS.update({'Referer' : url}), formdata=formdata, meta=meta, callback=self.parse_comments)
+
+
+    def parse_comments(self, response):
+        meta = response.meta
+        try:
+            comment_data = json.loads(response.body_as_unicode())
+        except Exception:
+            self.logger.error('invalid result for tuniu comments')
+            return
+        else:
+            if not comment_data.get('success'):
+                self.logger.error('invalid result for tuniu comments')
+                return
+            html = comment_data.get('data')
+            selector = Selector(text=html)
+            comments = []
+            for comment_item in selector.xpath('//div[@class="commentary-co clearfix"]'):
+                author = comment_item.xpath('.//div[@class="commentary-center clearfix"]/p[@class="author-name"]/a/text()').extract_first()
+                date = comment_item.xpath('.//div[@class="commentary-center clearfix"]/p[2]/em[2]/text()').extract_first()
+                content = comment_item.xpath('.//div[@class="commentary-center clearfix"]/p[@class="commentary-txt"]/text()').extract_first()
+                comments.append({
+                    'author' : author,
+                    'date' : date,
+                    'content' : content
+                })
+            result = meta['result']
+            result['comments'] = comments
+            self.logger.info('tuniu youji : %s' % json.dumps(result, ensure_ascii=False).encode('utf-8'))
+
 
 
 #class QunarBBSSpider(scrapy.Spider):
