@@ -242,10 +242,12 @@ class BaiduMudidiGonglueSpider(scrapy.Spider):
             meta['second_class'] = api[1]
             meta['third_class'] = api[2]
             meta['first_page'] = True
+            meta['surl'] = api[3]
             url = self.main_api % (0, api[3], self.__get_current_time())
             yield Request(url, headers=self.HEADERS, meta=meta, dont_filter=True, callback=self.parse_first_page)
 
     def parse_first_page(self, response):
+        meta = response.meta.copy()
         try:
             data = json.loads(response.body_as_unicode())
         except Exception:
@@ -285,4 +287,12 @@ class BaiduMudidiGonglueSpider(scrapy.Spider):
                     'days' : days
                 }
                 self.logger.info('baidu mudidi gonglue : %s' % json.dumps(result, ensure_ascii=False).encode('utf-8'))
+            if meta.get('first_page'):
+                meta['first_page'] = False
+                pages = search_res.get('pagelist', [])[-1][0]/10
+                for page in range(pages-1):
+                    url = self.main_api % ((page+2)*10, meta['surl'], self.__get_current_time())
+                    yield Request(url, headers=self.HEADERS, meta=meta, dont_filter=True, callback=self.parse_first_page)
+
+
 
