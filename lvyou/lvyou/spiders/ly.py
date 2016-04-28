@@ -80,4 +80,3 @@ class LYYoujiSpider(LYSpider):
                 'pageSize' : '15'
             }
             yield FormRequest(self.youji_api[0], formdata=formdata, headers=self.POST_HEADERS, callback=self.parse_gonglue)
-            return
