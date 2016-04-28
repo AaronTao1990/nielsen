@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import scrapy
-from scrapy.http import Request
+from scrapy.http import Request, FormRequest
 from scrapy.selector import Selector
 import json
 
@@ -8,7 +8,6 @@ class LYSpider(scrapy.Spider):
     name = "ly_gonglue"
 
     gonglue_api = ('http://go.ly.com/ajax/GetNewRaiderInfo?type=2&pageSize=12&pageindex=%d', 28)
-    comment_api = 'http://www.tuniu.com/yii.php?r=trips/notesAjax/getreplylist'
 
     HEADERS = {
         'Host' : 'go.ly.com',
@@ -52,3 +51,33 @@ class LYSpider(scrapy.Spider):
         result['date'] = date
         result['content'] = content
         self.logger.info('lv gonglue : %s' % json.dumps(result, ensure_ascii=False).encode('utf-8'))
+
+
+class LYYoujiSpider(LYSpider):
+    name = 'ly_youji'
+
+    youji_api = ('http://go.ly.com/ajax/GetNewRaiderInfo', 138)
+
+    POST_HEADERS = {
+        'Host' : 'go.ly.com',
+        'Accept' : '*/*',
+        'Origin' : 'http://go.ly.com',
+        'X-Requested-With' : 'XMLHttpRequest',
+        'Content-Type' : 'application/x-www-form-urlencoded',
+        'Referer' : 'http://go.ly.com/youji/',
+        'Accept-Encoding' : 'gzip, deflate',
+        'Accept-Language' : 'en-US,en;q=0.8,zh-CN;q=0.6,zh;q=0.4,zh-TW;q=0.2,ja;q=0.2'
+    }
+
+    def start_requests(self):
+        for page in range(self.youji_api[1]):
+            formdata = {
+                'type' : '1',
+                'destItemId' : '',
+                'destItemKind' : '',
+                'travelWay' : '',
+                'pageIndex' : str(page+1),
+                'pageSize' : '15'
+            }
+            yield FormRequest(self.youji_api[0], formdata=formdata, headers=self.POST_HEADERS, callback=self.parse_gonglue)
+            return
