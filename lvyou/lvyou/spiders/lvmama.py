@@ -9,6 +9,10 @@ import re
 class LvmamaJingdianSpider(scrapy.Spider):
     name = "lvmama_jingdian"
 
+    custom_settings = {
+        'DOWNLOAD_DELAY' : 3
+    }
+
     jingdian_api = (
         (u'亚洲', u'中国', '/lvyou/scenery/d-zhongguo3548.html', '3548'),
         (u'亚洲', u'泰国', '/lvyou/scenery/d-taiguo3542.html', '3542'),
