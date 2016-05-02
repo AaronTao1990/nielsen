@@ -8,6 +8,10 @@ from datetime import datetime
 class BaiduGonglueSpider(scrapy.Spider):
     name = "baidu_gonglue"
 
+    custom_settings = {
+        'DOWNLOAD_DELAY' : 0.3
+    }
+
     gonglue_api = 'http://lvyou.baidu.com/destination/ajax/books?format=ajax&pn=%d&rn=16&type=0&keywords=&t=%d'
 
     HEADERS = {
@@ -41,10 +45,12 @@ class BaiduGonglueSpider(scrapy.Spider):
                 name = book.get('gname')
                 date = self.__seconds_format(float(book.get('update_time')))
                 download_count = book.get('download_total')
+                url = 'http://lvyou.baidu.com/guide/' + book.get('gid')
                 result = {
                     'name' : name,
                     'date' : date,
-                    'download_count' : download_count
+                    'download_count' : download_count,
+                    'url' : url
                 }
                 self.logger.info('tripadvisor mudidi : %s' % json.dumps(result, ensure_ascii=False).encode('utf-8'))
 
