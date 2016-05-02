@@ -2,6 +2,7 @@
 import scrapy
 from scrapy.http import Request, FormRequest
 from scrapy.selector import Selector
+from utils.timeutil import get_current_date
 import json
 import re
 
@@ -179,12 +180,6 @@ class LvmamaJingdianSpider(scrapy.Spider):
         (u'非洲', u'苏丹', '/lvyou/scenery/d-sudan203388.html', '203388'),
     )
 
-    gonglue_api = (
-        (u'热门游记', 'http://travel.qunar.com/travelbook/list.htm?page=%d&order=hot_heat', 9999),
-        (u'精华游记', 'http://travel.qunar.com/travelbook/list.htm?page=%d&order=elite_ctime', 717),
-        (u'行程计划', 'http://travel.qunar.com/travelbook/list.htm?page=%d&order=start_heat', 9999),
-    )
-
     HEADERS = {
         'Host' : 'www.lvmama.com',
         'Cache-Control' : 'max-age=0',
@@ -198,7 +193,7 @@ class LvmamaJingdianSpider(scrapy.Spider):
 
     jingdian_post_api = 'http://www.lvmama.com/lvyou/dest_content/AjaxGetViewSpotList'
 
-    def __gen_request(self, meta, page, dest_id, request_uri, callback):
+    def __gen_request(self, meta, page, dest_id, request_uri, callback, referer):
         formdata = {
             'page' : str(page),
             'dest_id' : dest_id,
@@ -206,7 +201,9 @@ class LvmamaJingdianSpider(scrapy.Spider):
             'request_uri' : request_uri,
             'type' : 'scenery'
         }
-        return FormRequest(self.jingdian_post_api, headers=self.HEADERS, formdata=formdata, meta=meta, callback=callback)
+        headers = self.HEADERS.copy()
+        headers['Referer'] = referer
+        return FormRequest(self.jingdian_post_api, headers=headers, formdata=formdata, meta=meta, callback=callback)
 
     def start_requests(self):
         for jingdian_item in self.jingdian_api:
@@ -218,10 +215,9 @@ class LvmamaJingdianSpider(scrapy.Spider):
             meta['first_page'] = True
             referer = 'http://www.lvmama.com' + jingdian_item[2]
             meta['referer'] = referer
-            self.HEADERS.update({'Referer' : referer})
-            yield self.__gen_request(meta, 1, jingdian_item[3], jingdian_item[2], self.parse)
+            yield self.__gen_request(meta, 1, jingdian_item[3], jingdian_item[2], self.parse_list, referer)
 
-    def parse(self, response):
+    def parse_list(self, response):
         meta = response.meta.copy()
         try:
             jingdian_data = json.loads(response.body_as_unicode())
@@ -243,9 +239,11 @@ class LvmamaJingdianSpider(scrapy.Spider):
                     'second_class' : meta['second_class'],
                     'jingdian_name' : name,
                     'jiaoyin_count' : jiaoyin_count,
-                    'url' : url
+                    'url' : url,
+                    'date' : get_current_date()
                 }
-                self.logger.info('lvmama jingdian : %s' % json.dumps(result, ensure_ascii=False).encode('utf-8'))
+                yield Request(url, meta={'result' : result}, headers=self.HEADERS, callback=self.parse_detail)
+                #self.logger.info('lvmama jingdian : %s' % json.dumps(result, ensure_ascii=False).encode('utf-8'))
 
             # deal with more pages
             if meta.get('first_page'):
@@ -256,10 +254,20 @@ class LvmamaJingdianSpider(scrapy.Spider):
                     pages = page_links[-2].xpath('./text()').extract_first()
                 if pages:
                     for page in range(int(pages)-1):
-                        self.HEADERS.update({'Referer' : meta['referer']})
-                        yield self.__gen_request(meta, page+2, meta['dest_id'], meta['request_uri'], self.parse)
+                        yield self.__gen_request(meta, page+2, meta['dest_id'], meta['request_uri'], self.parse_list, meta['referer'])
                 else:
                     self.logger.error('failed to get pages for item : %s' % response.url)
+
+    def parse_detail(self, response):
+        meta = response.meta
+        selector = Selector(response)
+        want_to_go = selector.xpath('//i[@_type="want"]/@data-sum').extract_first()
+        have_been_there = selector.xpath('//i[@_type="been"]/@data-sum').extract_first()
+        result = meta['result']
+        result['want_to_go'] = want_to_go
+        result['have_been_there'] = have_been_there
+        self.logger.info('lvmama jingdian : %s' % json.dumps(result, ensure_ascii=False).encode('utf-8'))
+
 
 
 class LvmamaBBSSpider(scrapy.Spider):
