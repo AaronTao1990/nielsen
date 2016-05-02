@@ -2,6 +2,7 @@
 import scrapy
 from scrapy.http import Request
 from scrapy.selector import Selector
+from utils.htmlutils import remove_tags
 import json
 import re
 
@@ -26,9 +27,9 @@ class QunarSpider(scrapy.Spider):
             meta = {}
             meta['main_class'] = gonglue_item[0]
             for page in range(gonglue_item[2]):
-                yield Request(gonglue_item[1] % (page + 1), meta=meta, headers=self.HEADERS, dont_filter=True)
+                yield Request(gonglue_item[1] % (page + 1), meta=meta, headers=self.HEADERS, dont_filter=True, callback=self.parse_list)
 
-    def parse(self, response):
+    def parse_list(self, response):
         meta = response.meta
         selector = Selector(response)
         for gonglue in selector.xpath('//ul[@class="b_strategy_list "]/li'):
@@ -36,10 +37,12 @@ class QunarSpider(scrapy.Spider):
             love_count = gonglue.xpath('./div[@class="nums"]/span[@class="icon_love"]/text()').extract_first()
             comment_count = gonglue.xpath('./div[@class="nums"]/span[@class="icon_comment"]/text()').extract_first()
             title = gonglue.xpath('./h2[@class="tit"]/a/text()').extract_first()
+            url = 'http://travel.qunar.com' + gonglue.xpath('./h2[@class="tit"]/a/@href').extract_first()
             username = gonglue.xpath('./p[@class="user_info"]/span[@class="user_name"]/a/text()').extract_first()
-            date = gonglue.xpath('./p[@class="user_info"]/span[@class="date"]/text()').extract_first()
+            date = gonglue.xpath('./p[@class="user_info"]/span[@class="date"]/text()').extract_first().replace(u'出发', '00:00:00')
             days = gonglue.xpath('./p[@class="user_info"]/span[@class="days"]/text()').extract_first()
             content = ''.join(gonglue.xpath('./p[@class="places"]/node()').extract())
+            content = remove_tags(content)
             result = {
                 'main_class' : meta['main_class'],
                 'title' : title,
@@ -49,9 +52,21 @@ class QunarSpider(scrapy.Spider):
                 'username' : username,
                 'date' : date,
                 'days' : days,
-                'content' : content
+                'content' : content,
+                'url' : url
             }
-            self.logger.info('qunar gonglue : %s' % json.dumps(result, ensure_ascii=False).encode('utf-8'))
+            #self.logger.info('qunar gonglue : %s' % json.dumps(result, ensure_ascii=False).encode('utf-8'))
+            yield Request(url, meta={'result' : result}, headers=self.HEADERS, dont_filter=True, callback=self.parse_content)
+
+    def parse_content(self, response):
+        meta = response.meta
+        selector = Selector(response)
+        forward = ''.join(selector.xpath('//div[@id="b_foreword"]/node()').extract())
+        scheduler = ''.join(selector.xpath('//div[@id="b_panel_schedule"]/node()').extract())
+        content = remove_tags(forward+scheduler)
+        result = meta['result']
+        result['content'] = content
+        self.logger.info('qunar gonglue : %s' % json.dumps(result, ensure_ascii=False).encode('utf-8'))
 
 
 class QunarBBSSpider(scrapy.Spider):
