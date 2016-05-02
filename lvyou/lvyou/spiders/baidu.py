@@ -57,6 +57,10 @@ class BaiduGonglueSpider(scrapy.Spider):
 class BaiduMudidiGonglueSpider(scrapy.Spider):
     name = 'baidumudidi_gonglue'
 
+    custom_settings = {
+        'DOWNLOAD_DELAY' : 0.3
+    }
+
     apis = (
         (u'亚洲', u'中国', u'拉萨', u'lasa'),
         (u'亚洲', u'中国', u'丽江', u'lijiang'),
@@ -238,6 +242,9 @@ class BaiduMudidiGonglueSpider(scrapy.Spider):
 
     main_api = 'http://lvyou.baidu.com/search/ajax/search?format=ajax&pn=%d&surl=%s&rn=10&t=%d'
 
+    def __seconds_format(self, time_s, format_s='%Y-%m-%d %H:%M:%S'):
+        return datetime.fromtimestamp(time_s).strftime(format_s)
+
     def __get_current_time(self):
         return int(time.time()*1000)
 
@@ -282,6 +289,11 @@ class BaiduMudidiGonglueSpider(scrapy.Spider):
                 comment_count = item.get('common_posts_count')
                 favorite_count = item.get('favorite_count')
                 days = item.get('days')
+                url = 'http://lvyou.baidu.com/notes/%s?sid=%s' % (
+                    item.get('nid'),
+                    item.get('departure_sid')
+                )
+                date = self.__seconds_format(float(item.get('create_time')))
                 result = {
                     'main_class' : meta['main_class'],
                     'second_class' : meta['second_class'],
@@ -293,15 +305,17 @@ class BaiduMudidiGonglueSpider(scrapy.Spider):
                     'view_count' : view_count,
                     'comment_count' : comment_count,
                     'favorite_count' : favorite_count,
-                    'days' : days
+                    'days' : days,
+                    'url' : url,
+                    'date' : date
                 }
                 self.logger.info('baidu mudidi gonglue : %s' % json.dumps(result, ensure_ascii=False).encode('utf-8'))
             if meta.get('first_page'):
                 meta['first_page'] = False
                 pages = search_res.get('pagelist', [])[-1][0]/10
                 for page in range(pages-1):
-                    url = self.main_api % ((page+2)*10, meta['surl'], self.__get_current_time())
-                    yield Request(url, headers=self.HEADERS, meta=meta, dont_filter=True, callback=self.parse_first_page)
+                    api_url = self.main_api % ((page+2)*10, meta['surl'], self.__get_current_time())
+                    yield Request(api_url, headers=self.HEADERS, meta=meta, dont_filter=True, callback=self.parse_first_page)
 
 
 
