@@ -8,6 +8,10 @@ import re
 class TuniuSpider(scrapy.Spider):
     name = "tuniu_youji"
 
+    custom_settings = {
+        'DOWNLOAD_DELAY' : 0.3
+    }
+
     youji_api = (
         (u'中国', u'丽江', u'http://trips.tuniu.com/travelthread/0/3312/1/0', u'558'),
         (u'中国', u'北京', u'http://trips.tuniu.com/travelthread/0/200/1/0', u'126'),
