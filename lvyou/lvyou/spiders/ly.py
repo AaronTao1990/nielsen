@@ -2,10 +2,17 @@
 import scrapy
 from scrapy.http import Request, FormRequest
 from scrapy.selector import Selector
+from utils.htmlutils import remove_tags
 import json
+import re
 
 class LYSpider(scrapy.Spider):
     name = "ly_gonglue"
+
+    custom_settings = {
+        'DOWNLOAD_TIMEOUT' : 10,
+        'DOWNLOAD_DELAY' : 0.3
+    }
 
     gonglue_api = ('http://go.ly.com/ajax/GetNewRaiderInfo?type=2&pageSize=12&pageindex=%d', 28)
 
@@ -44,8 +51,10 @@ class LYSpider(scrapy.Spider):
 
     def parse_content(self, response):
         selector = Selector(response)
-        date = selector.xpath('//span[@id="subtime"]/text()').extract_first().replace(u'发表时间：', '').strip(' \n\r')
+        date = selector.xpath('//span[@id="subtime"]/text()').extract_first().replace(u'发表时间：', '').strip(' \n\r')+':00'
         content = ''.join(selector.xpath('//div[@id="content"]/node()').extract())
+        content = remove_tags(content).replace('\r\n', '')
+        content = re.sub('\s*\r\n\s*', '', content)
 
         result = response.meta['result']
         result['date'] = date
