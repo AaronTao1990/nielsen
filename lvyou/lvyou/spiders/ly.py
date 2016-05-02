@@ -55,6 +55,7 @@ class LYSpider(scrapy.Spider):
         content = ''.join(selector.xpath('//div[@id="content"]/node()').extract())
         content = remove_tags(content).replace('\r\n', '')
         content = re.sub('\s*\r\n\s*', '', content)
+        content = re.sub('\s*', '', content)
 
         result = response.meta['result']
         result['date'] = date
