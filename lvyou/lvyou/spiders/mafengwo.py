@@ -7,6 +7,10 @@ import json
 class MafengwoSpider(scrapy.Spider):
     name = "mafengwo_gonglue"
 
+    custom_settings = {
+        'DOWNLOAD_DELAY' : 0.3
+    }
+
     gonglue_api = (
         (u'欧洲', u'英国', 'http://www.mafengwo.cn/gonglve/mdd-oz_yg-0-0-0.html#list'),
         (u'欧洲', u'土耳其', 'http://www.mafengwo.cn/gonglve/mdd-oz_teq-0-0-0.html#list'),
