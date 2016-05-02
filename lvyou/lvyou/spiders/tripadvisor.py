@@ -2,10 +2,15 @@
 import scrapy
 from scrapy.http import Request
 from scrapy.selector import Selector
+from utils.timeutil import get_current_date
 import json
 
 class TripAdvisorSpider(scrapy.Spider):
     name = "tripadvisor_mudidi"
+
+    custom_settings = {
+        'DOWNLOAD_DELAY' : 0.3
+    }
 
     mudidi_api = (
         (u'亚洲', u'阿富汗', u'http://www.tripadvisor.cn/Tourism-g659499-Afghanistan-Vacations.html'),
@@ -225,18 +230,28 @@ class TripAdvisorSpider(scrapy.Spider):
 
         dianping_and_advisor_count = selector.xpath('//div[@class="totalContentCount"]/b/text()').extract_first().replace(',', '')
 
-        hotel_count = selector.xpath('//li[@class="hotels twoLines"]//span[@class="typeQty"]/text()').extract_first().replace('(', '').replace(')', '')
-        hotel_dianping_count = selector.xpath('//li[@class="hotels twoLines"]//span[@class="contentCount"]/text()').extract_first().replace(',', '').replace(u'条点评', '')
+        try:
+            hotel_count = selector.xpath('//li[@class="hotels twoLines"]//span[@class="typeQty"]/text()').extract_first().replace('(', '').replace(')', '')
+            hotel_dianping_count = selector.xpath('//li[@class="hotels twoLines"]//span[@class="contentCount"]/text()').extract_first().replace(',', '').replace(u'条点评', '')
 
-        jingdian_count = selector.xpath('//li[@class="attractions twoLines"]//span[@class="typeQty"]/text()').extract_first().replace('(', '').replace(')', '')
-        jingdian_dianping_count = selector.xpath('//li[@class="attractions twoLines"]//span[@class="contentCount"]/text()').extract_first().replace(',', '').replace(u'条点评', '')
+            jingdian_count = selector.xpath('//li[@class="attractions twoLines"]//span[@class="typeQty"]/text()').extract_first().replace('(', '').replace(')', '')
+            jingdian_dianping_count = selector.xpath('//li[@class="attractions twoLines"]//span[@class="contentCount"]/text()').extract_first().replace(',', '').replace(u'条点评', '')
 
-        restaurants_count = selector.xpath('//li[@class="restaurants twoLines"]//span[@class="typeQty"]/text()').extract_first().replace('(', '').replace(')', '')
-        restaurants_dianping_count = selector.xpath('//li[@class="restaurants twoLines"]//span[@class="contentCount"]/text()').extract_first().replace(',', '').replace(u'条点评', '')
+            restaurants_count = selector.xpath('//li[@class="restaurants twoLines"]//span[@class="typeQty"]/text()').extract_first().replace('(', '').replace(')', '')
+            restaurants_dianping_count = selector.xpath('//li[@class="restaurants twoLines"]//span[@class="contentCount"]/text()').extract_first().replace(',', '').replace(u'条点评', '')
+        except Exception:
+            hotel_count = 0
+            hotel_dianping_count = 0
 
-        if not hotel_count or not jingdian_count:
-            self.warn('no hotel count for url : %s' % meta['url'])
-            return
+            jingdian_count = 0
+            jingdian_dianping_count = 0
+
+            restaurants_count = 0
+            restaurants_dianping_count = 0
+
+        #if not hotel_count or not jingdian_count:
+        #    self.warn('no hotel count for url : %s' % meta['url'])
+        #    return
 
         result = {
             'main_class' : meta['main_class'],
@@ -249,6 +264,7 @@ class TripAdvisorSpider(scrapy.Spider):
             'jingdian_dianping_count' : jingdian_dianping_count,
             'restaurants_count' : restaurants_count,
             'restaurants_dianping_count' : restaurants_dianping_count,
+            'date' : get_current_date()
         }
         self.logger.info('tripadvisor mudidi : %s' % json.dumps(result, ensure_ascii=False).encode('utf-8'))
 
