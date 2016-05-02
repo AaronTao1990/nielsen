@@ -1026,8 +1026,9 @@ class TuniuBBSSpider(scrapy.Spider):
             url = tiezi.xpath('./th/a[1]/@href').extract_first()
 
             pages = tiezi.xpath('./th/span[@class="tps"]/a[last()]/text()').extract_first()
+            if not pages:
+                pages = 1
 
-            self.logger.info('title : %s, author : %s, date : %s, pages : %s' %  (title, author, date, pages))
             if not title or not author or not date:
                 continue
             date += ':00'
