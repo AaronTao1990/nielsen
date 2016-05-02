@@ -10,7 +10,7 @@ class QunarSpider(scrapy.Spider):
     name = "qunar_gonglue"
 
     custom_settings = {
-        'DOWNLOAD_DELAY' : 3
+        'DOWNLOAD_DELAY' : 0.3
     }
 
     gonglue_api = (
@@ -77,7 +77,7 @@ class QunarBBSSpider(scrapy.Spider):
     name = 'qunar_bbs'
 
     custom_settings = {
-        'DOWNLOAD_DELAY' : 3
+        'DOWNLOAD_DELAY' : 0.3
     }
 
     bbs_api = (

@@ -3,6 +3,7 @@ import scrapy
 from scrapy.http import Request, FormRequest
 from scrapy.selector import Selector
 from utils.timeutil import get_current_date
+from utils.htmlutils import remove_tags
 import json
 import re
 
@@ -277,24 +278,22 @@ class LvmamaJingdianSpider(scrapy.Spider):
 class LvmamaBBSSpider(scrapy.Spider):
     name = 'lvmama_bbs'
 
+    custom_settings = {
+        'DOWNLOAD_DELAY' : 0.3
+    }
+
     bbs_api = (
-        (u'聪明旅行家专区', u'分享', 'http://travel.qunar.com/bbs/forum.php?mod=forumdisplay&fid=56&filter=typeid&typeid=28&orderby=views&page=%d', 13),
-        (u'聪明旅行家专区', u'组团', 'http://travel.qunar.com/bbs/forum.php?mod=forumdisplay&fid=56&filter=typeid&typeid=29&orderby=views&page=%d', 17),
-        (u'旅游问答', u'国内', 'http://travel.qunar.com/bbs/forum.php?mod=forumdisplay&fid=54&filter=typeid&typeid=17&orderby=views&page=%d', 577),
-        (u'旅游问答', u'东南亚', 'http://travel.qunar.com/bbs/forum.php?mod=forumdisplay&fid=54&filter=typeid&typeid=18&orderby=views&page=%d', 135),
-        (u'旅游问答', u'欧洲', 'http://travel.qunar.com/bbs/forum.php?mod=forumdisplay&fid=54&filter=typeid&typeid=19&orderby=views&page=%d', 112),
-        (u'旅游问答', u'美洲', 'http://travel.qunar.com/bbs/forum.php?mod=forumdisplay&fid=54&filter=typeid&typeid=20&orderby=views&page=%d', 29),
-        (u'旅游问答', u'大洋洲', 'http://travel.qunar.com/bbs/forum.php?mod=forumdisplay&fid=54&filter=typeid&typeid=21&orderby=views&page=%d', 24),
-        (u'精彩游记', u'国内游', 'http://travel.qunar.com/bbs/forum.php?mod=forumdisplay&fid=42&typeid=3&orderby=views&typeid=3&orderby=views&filter=typeid&page=%d', 168),
-        (u'精彩游记', u'港澳台', 'http://travel.qunar.com/bbs/forum.php?mod=forumdisplay&fid=42&filter=typeid&typeid=4&orderby=views&page=%d', 12),
-        (u'精彩游记', u'出境游', 'http://travel.qunar.com/bbs/forum.php?mod=forumdisplay&fid=42&filter=typeid&typeid=5&orderby=views&page=%d', 52),
+        (u'旅游指南', u'景点推荐', u'http://bbs.lvmama.com/forum.php?mod=forumdisplay&fid=2&filter=reply&orderby=replies&typeid=92&page=%d', 26),
+        (u'游记攻略', u'心情游记', u'http://bbs.lvmama.com/forum.php?mod=forumdisplay&fid=5&filter=reply&orderby=replies&typeid=29&page=%d', 263),
+        (u'游记攻略', u'攻略手札', u'http://bbs.lvmama.com/forum.php?mod=forumdisplay&fid=5&filter=reply&orderby=replies&typeid=30&page=%d', 92),
+        (u'游记攻略', u'其他', u'http://bbs.lvmama.com/forum.php?mod=forumdisplay&fid=5&filter=reply&orderby=replies&page=%d', 625),
     )
 
     HEADERS = {
-        'Host' : 'travel.qunar.com',
         'Accept' : 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
         'Accept-Encoding' : 'gzip, deflate, sdch',
-        'Accept-Language' : 'en-US,en;q=0.8,zh-CN;q=0.6,zh;q=0.4,zh-TW;q=0.2,ja;q=0.2'
+        'Accept-Language' : 'zh-CN,zh;q=0.8,en;q=0.6',
+        'Host' : 'bbs.lvmama.com'
     }
 
     def start_requests(self):
@@ -304,48 +303,82 @@ class LvmamaBBSSpider(scrapy.Spider):
             meta['second_class'] = gonglue_item[1]
             for page in range(gonglue_item[3]):
                 yield Request(gonglue_item[2] % (page + 1), meta=meta, headers=self.HEADERS, dont_filter=True, callback=self.parse_list)
-                return
 
     def parse_list(self, response):
         meta = response.meta
-        body = re.sub(r'(<tbody id="normalthread_\d+")', r'\g<1>>', response.body_as_unicode())
-        selector = Selector(text=body)
-        for tiezi in selector.xpath('//table[@id="threadlisttableid"]/tbody[position()>1]/tr/th'):
-            title = tiezi.xpath('./span[@class="xst"]/a/text()').extract_first()
-            author = tiezi.xpath('./p[@class="mtn xg1"]/a[1]/text()').extract_first()
-            date = tiezi.xpath('./p[@class="mtn xg1"]/span/text()').extract_first()
-            view_count_text = ''.join(tiezi.xpath('./p[@class="mtn xg1"]/node()').extract())
-            view_count = re.search(u'(?<=查看: )\d+', view_count_text).group(0)
-            reply_count = tiezi.xpath('./p[@class="mtn xg1"]/a[2]/text()').extract_first()
-            url = 'http://travel.qunar.com/bbs/' + tiezi.xpath('./span[@class="xst"]/a/@href').extract_first()
+        selector = Selector(response)
+        for tiezi in selector.xpath('//form[@id="moderate"]/table/tbody/tr'):
+            title = tiezi.xpath('./th/a/text()').extract_first()
+            author = tiezi.xpath('./td[@class="by"]/cite/a/text()').extract_first()
+            date = tiezi.xpath('./td[@class="by"]/em/a/text()').extract_first()
+            view_count = tiezi.xpath('./td[@class="num"]/em/text()').extract_first()
+            comment_count = tiezi.xpath('./td[@class="num"]/a/text()').extract_first()
+            url = tiezi.xpath('./th/a/@href').extract_first()
+
+            if not title or not author or not date:
+                continue
+            date += ':00'
+            url = 'http://bbs.lvmama.com/' + url
+
             data = {
+                'host' : 'qunar',
                 'main_class' : meta['main_class'],
                 'second_class' : meta['second_class'],
                 'title' : title,
                 'author' : author,
                 'date' : date,
                 'view_count' : view_count,
-                'reply_count' : reply_count,
+                'comment_count' : comment_count,
                 'url' : url
             }
-            yield Request(url, meta={'data':data}, headers=self.HEADERS, dont_filter=True, callback=self.parse_content)
+            yield Request(url, meta={'data':data, 'first_page' : True}, headers=self.HEADERS, dont_filter=True, callback=self.parse_content)
 
     def parse_content(self, response):
+        meta = response.meta.copy()
         data = response.meta['data']
         selector = Selector(response)
         replies = []
-        for post in selector.xpath('//div[@id="postlist"]//td[@class="plc"]'):
-            time = post.xpath('.//div[@class="authi"]/em/text()').extract_first()
-            content = ''.join(post.xpath('.//div[@class="t_fsz"]/node()').extract())
-            if not time or not content:
+        #for post in selector.xpath('//div[@id="postlist"]/div/table/tbody/tr[1]'):
+        for post in selector.xpath('//div[@id="postlist"]/div/table/tr[1]'):
+            date = post.xpath('./td[@class="plc"]//div[@class="authi"]/em/text()').extract_first()
+            content = ''.join(post.xpath('./td[@class="plc"]//div[@class="pcb"]/node()').extract())
+            author = post.xpath('./td[@class="pls"]//div[@class="authi"]/a/text()').extract_first()
+            if not date or not content:
                 continue
+            date = date.replace(u'发表于 ', '')
             replies.append({
-                'time' : time,
-                'content' : content
+                'date' : date,
+                'content' : remove_tags(content).replace('\r\n', ''),
+                'author' : author
             })
         if replies:
-            data['content'] = replies[0]['content']
-            data['replies'] = replies[1:]
-        self.logger.info('qunar bbs: %s' % json.dumps(data, ensure_ascii=False).encode('utf-8'))
+            if meta.get('first_page'):
+                data['content'] = remove_tags(replies[0]['content'])
+                data['floor'] = '0'
+                self.logger.info('lvmama bbs: %s' % json.dumps(data, ensure_ascii=False).encode('utf-8'))
+
+            for i, reply in enumerate(replies[1:]):
+                result = data.copy()
+                result.update(reply)
+                floor = str(meta.get('page', 0)*10 + i + 1)
+                result.update({
+                    'floor' : floor,
+                    'view_count' : 0,
+                    'comment_count' : 0
+                })
+                self.logger.info('lvmama bbs: %s' % json.dumps(result, ensure_ascii=False).encode('utf-8'))
+
+        # deal with pages
+        if meta.get('first_page'):
+            del meta['first_page']
+
+            pages = selector.xpath('//div[@class="pg"]/label/span/text()').extract_first()
+            if not pages:
+                return
+            pages = re.search('\d+', pages).group()
+            for page in range(int(pages)-1):
+                api = re.sub(r'-\d+(-\d+\.html)', r'-%d\g<1>'%(page+2), response.url)
+                meta.update({'page' : page+2})
+                yield Request(api, meta=meta, headers=self.HEADERS, callback=self.parse_content)
 
 
