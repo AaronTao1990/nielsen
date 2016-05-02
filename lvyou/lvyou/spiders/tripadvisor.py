@@ -3,6 +3,7 @@ import scrapy
 from scrapy.http import Request
 from scrapy.selector import Selector
 from utils.timeutil import get_current_date
+from utils.htmlutils import remove_tags
 import json
 
 class TripAdvisorSpider(scrapy.Spider):
@@ -273,6 +274,10 @@ class TripAdvisorSpider(scrapy.Spider):
 class TripAdvisorYoujiSpider(scrapy.Spider):
     name = 'tripadvisor_youji'
 
+    custom_settings = {
+        'DOWNLOAD_DELAY' : 0.3
+    }
+
     youji_api = (
         (u'港澳', u'http://www.tripadvisor.cn/TourismBlog-g294217-Hong_Kong.html'),
         (u'台湾', u'http://www.tripadvisor.cn/TourismBlog-g293910-Taiwan.html'),
@@ -405,11 +410,13 @@ class TripAdvisorYoujiSpider(scrapy.Spider):
         selector = Selector(response)
 
         contents = selector.xpath('//div[@class="strategy-content "]/node()').extract()
+        content = remove_tags(''.join(contents)).replace('\n', '')
         result = {
             'main_class' : meta['main_class'],
             'title' : meta['title'],
             'url' : meta['url'],
-            'contents' : contents
+            'content' : content,
+            'date' : get_current_date()
         }
         self.logger.info('tripadvisor youji : %s' % json.dumps(result, ensure_ascii=False).encode('utf-8'))
 
