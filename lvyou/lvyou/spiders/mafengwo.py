@@ -127,13 +127,13 @@ class MafengwoSpider(scrapy.Spider):
         for gonglue in selector.xpath('//div[@class="gl_list"]'):
             gonglue_name = gonglue.xpath('./a/@title').extract_first()
             url = 'http://www.mafengwo.cn' + gonglue.xpath('./a/@href').extract_first()
-            update_time = gonglue.xpath('./div[@class="update_time"]/text()').extract_first().replace(u'更新时间：', '')
+            update_time = gonglue.xpath('./div[@class="update_time"]/text()').extract_first().replace(u'更新时间：', ' 00:00:00')
             download_count = gonglue.xpath('./div[@class="down_cout"]/p/text()').extract_first().replace(u'人下载', '')
             result = {
                 'main_class' : meta['main_class'],
                 'second_class' : meta['second_class'],
                 'gonglue_name' : gonglue_name,
-                'update_time' : update_time,
+                'date' : update_time,
                 'download_count' : download_count,
                 'url' : url
             }
