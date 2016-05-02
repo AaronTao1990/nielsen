@@ -76,6 +76,10 @@ class QunarSpider(scrapy.Spider):
 class QunarBBSSpider(scrapy.Spider):
     name = 'qunar_bbs'
 
+    custom_settings = {
+        'DOWNLOAD_DELAY' : 3
+    }
+
     bbs_api = (
         (u'聪明旅行家专区', u'分享', 'http://travel.qunar.com/bbs/forum.php?mod=forumdisplay&fid=56&filter=typeid&typeid=28&orderby=views&page=%d', 13),
         (u'聪明旅行家专区', u'组团', 'http://travel.qunar.com/bbs/forum.php?mod=forumdisplay&fid=56&filter=typeid&typeid=29&orderby=views&page=%d', 17),
