@@ -111,19 +111,20 @@ class QunarBBSSpider(scrapy.Spider):
         for tiezi in selector.xpath('//table[@id="threadlisttableid"]/tbody[position()>1]/tr/th'):
             title = tiezi.xpath('./span[@class="xst"]/a/text()').extract_first()
             author = tiezi.xpath('./p[@class="mtn xg1"]/a[1]/text()').extract_first()
-            date = tiezi.xpath('./p[@class="mtn xg1"]/span/text()').extract_first()
+            date = tiezi.xpath('./p[@class="mtn xg1"]/span/text()').extract_first() + ' 00:00:00'
             view_count_text = ''.join(tiezi.xpath('./p[@class="mtn xg1"]/node()').extract())
             view_count = re.search(u'(?<=查看: )\d+', view_count_text).group(0)
             reply_count = tiezi.xpath('./p[@class="mtn xg1"]/a[2]/text()').extract_first()
             url = 'http://travel.qunar.com/bbs/' + tiezi.xpath('./span[@class="xst"]/a/@href').extract_first()
             data = {
+                'host' : 'qunar',
                 'main_class' : meta['main_class'],
                 'second_class' : meta['second_class'],
                 'title' : title,
                 'author' : author,
                 'date' : date,
                 'view_count' : view_count,
-                'reply_count' : reply_count,
+                'comment_count' : reply_count,
                 'url' : url
             }
             yield Request(url, meta={'data':data}, headers=self.HEADERS, dont_filter=True, callback=self.parse_content)
@@ -133,17 +134,30 @@ class QunarBBSSpider(scrapy.Spider):
         selector = Selector(response)
         replies = []
         for post in selector.xpath('//div[@id="postlist"]//td[@class="plc"]'):
-            time = post.xpath('.//div[@class="authi"]/em/text()').extract_first()
+            date = post.xpath('.//div[@class="authi"]/em/text()').extract_first()
             content = ''.join(post.xpath('.//div[@class="t_fsz"]/node()').extract())
-            if not time or not content:
+            author = post.xpath('../td[@class="pls"]//a[@class="xw1"]/@title').extract_first()
+            if not date or not content:
                 continue
+            date = date.replace(u'发表于 ', '')
             replies.append({
-                'time' : time,
-                'content' : content
+                'date' : date,
+                'content' : remove_tags(content).replace('\r\n', ''),
+                'author' : author
             })
         if replies:
-            data['content'] = replies[0]['content']
-            data['replies'] = replies[1:]
-        self.logger.info('qunar bbs: %s' % json.dumps(data, ensure_ascii=False).encode('utf-8'))
+            data['content'] = remove_tags(replies[0]['content'])
+            data['floor'] = '0'
+            self.logger.info('qunar bbs: %s' % json.dumps(data, ensure_ascii=False).encode('utf-8'))
+
+            for i, reply in enumerate(replies[1:]):
+                result = data.copy()
+                result.update(reply)
+                result.update({
+                    'floor' : str(i+1),
+                    'view_count' : 0,
+                    'comment_count' : 0
+                })
+                self.logger.info('qunar bbs: %s' % json.dumps(result, ensure_ascii=False).encode('utf-8'))
 
 
