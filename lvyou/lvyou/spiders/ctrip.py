@@ -7,6 +7,10 @@ import json
 class CtripSpider(scrapy.Spider):
     name = "ctrip_gonglue"
 
+    custom_settings = {
+        'DOWNLOAD_DELAY' : 0.3
+    }
+
     gonglue_api = (
         (u'中国', u'北京', 'http://you.ctrip.com/guides/g-d1.html#gl'),
         (u'中国', u'上海', 'http://you.ctrip.com/guides/g-d2.html#gl'),
