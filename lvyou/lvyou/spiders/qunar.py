@@ -9,6 +9,10 @@ import re
 class QunarSpider(scrapy.Spider):
     name = "qunar_gonglue"
 
+    custom_settings = {
+        'DOWNLOAD_DELAY' : 0.3
+    }
+
     gonglue_api = (
         (u'热门游记', 'http://travel.qunar.com/travelbook/list.htm?page=%d&order=hot_heat', 9999),
         (u'精华游记', 'http://travel.qunar.com/travelbook/list.htm?page=%d&order=elite_ctime', 717),
