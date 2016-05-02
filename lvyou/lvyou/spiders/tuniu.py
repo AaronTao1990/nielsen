@@ -2,6 +2,7 @@
 import scrapy
 from scrapy.http import Request, FormRequest
 from scrapy.selector import Selector
+from utils.htmlutils import remove_tags
 import json
 import re
 
@@ -911,7 +912,6 @@ class TuniuSpider(scrapy.Spider):
         else:
             if not comment_data.get('success'):
                 self.logger.error('invalid result for tuniu comments')
-                return
             html = comment_data.get('data')
             selector = Selector(text=html)
             comments = []
@@ -929,78 +929,158 @@ class TuniuSpider(scrapy.Spider):
             self.logger.info('tuniu youji : %s' % json.dumps(result, ensure_ascii=False).encode('utf-8'))
 
 
+class TuniuBBSSpider(scrapy.Spider):
+    name = 'tuniu_bbs'
 
-#class QunarBBSSpider(scrapy.Spider):
-#    name = 'qunar_bbs'
-#
-#    bbs_api = (
-#        (u'聪明旅行家专区', u'分享', 'http://travel.qunar.com/bbs/forum.php?mod=forumdisplay&fid=56&filter=typeid&typeid=28&orderby=views&page=%d', 13),
-#        (u'聪明旅行家专区', u'组团', 'http://travel.qunar.com/bbs/forum.php?mod=forumdisplay&fid=56&filter=typeid&typeid=29&orderby=views&page=%d', 17),
-#        (u'旅游问答', u'国内', 'http://travel.qunar.com/bbs/forum.php?mod=forumdisplay&fid=54&filter=typeid&typeid=17&orderby=views&page=%d', 577),
-#        (u'旅游问答', u'东南亚', 'http://travel.qunar.com/bbs/forum.php?mod=forumdisplay&fid=54&filter=typeid&typeid=18&orderby=views&page=%d', 135),
-#        (u'旅游问答', u'欧洲', 'http://travel.qunar.com/bbs/forum.php?mod=forumdisplay&fid=54&filter=typeid&typeid=19&orderby=views&page=%d', 112),
-#        (u'旅游问答', u'美洲', 'http://travel.qunar.com/bbs/forum.php?mod=forumdisplay&fid=54&filter=typeid&typeid=20&orderby=views&page=%d', 29),
-#        (u'旅游问答', u'大洋洲', 'http://travel.qunar.com/bbs/forum.php?mod=forumdisplay&fid=54&filter=typeid&typeid=21&orderby=views&page=%d', 24),
-#        (u'精彩游记', u'国内游', 'http://travel.qunar.com/bbs/forum.php?mod=forumdisplay&fid=42&typeid=3&orderby=views&typeid=3&orderby=views&filter=typeid&page=%d', 168),
-#        (u'精彩游记', u'港澳台', 'http://travel.qunar.com/bbs/forum.php?mod=forumdisplay&fid=42&filter=typeid&typeid=4&orderby=views&page=%d', 12),
-#        (u'精彩游记', u'出境游', 'http://travel.qunar.com/bbs/forum.php?mod=forumdisplay&fid=42&filter=typeid&typeid=5&orderby=views&page=%d', 52),
-#    )
-#
-#    HEADERS = {
-#        'Host' : 'travel.qunar.com',
-#        'Accept' : 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-#        'Accept-Encoding' : 'gzip, deflate, sdch',
-#        'Accept-Language' : 'en-US,en;q=0.8,zh-CN;q=0.6,zh;q=0.4,zh-TW;q=0.2,ja;q=0.2'
-#    }
-#
-#    def start_requests(self):
-#        for gonglue_item in self.bbs_api:
-#            meta = {}
-#            meta['main_class'] = gonglue_item[0]
-#            meta['second_class'] = gonglue_item[1]
-#            for page in range(gonglue_item[3]):
-#                yield Request(gonglue_item[2] % (page + 1), meta=meta, headers=self.HEADERS, dont_filter=True, callback=self.parse_list)
-#
-#    def parse_list(self, response):
-#        meta = response.meta
-#        body = re.sub(r'(<tbody id="normalthread_\d+")', r'\g<1>>', response.body_as_unicode())
-#        selector = Selector(text=body)
-#        for tiezi in selector.xpath('//table[@id="threadlisttableid"]/tbody[position()>1]/tr/th'):
-#            title = tiezi.xpath('./span[@class="xst"]/a/text()').extract_first()
-#            author = tiezi.xpath('./p[@class="mtn xg1"]/a[1]/text()').extract_first()
-#            date = tiezi.xpath('./p[@class="mtn xg1"]/span/text()').extract_first()
-#            view_count_text = ''.join(tiezi.xpath('./p[@class="mtn xg1"]/node()').extract())
-#            view_count = re.search(u'(?<=查看: )\d+', view_count_text).group(0)
-#            reply_count = tiezi.xpath('./p[@class="mtn xg1"]/a[2]/text()').extract_first()
-#            url = 'http://travel.qunar.com/bbs/' + tiezi.xpath('./span[@class="xst"]/a/@href').extract_first()
-#            data = {
-#                'main_class' : meta['main_class'],
-#                'second_class' : meta['second_class'],
-#                'title' : title,
-#                'author' : author,
-#                'date' : date,
-#                'view_count' : view_count,
-#                'reply_count' : reply_count,
-#                'url' : url
-#            }
-#            yield Request(url, meta={'data':data}, headers=self.HEADERS, dont_filter=True, callback=self.parse_content)
-#
-#    def parse_content(self, response):
-#        data = response.meta['data']
-#        selector = Selector(response)
-#        replies = []
-#        for post in selector.xpath('//div[@id="postlist"]//td[@class="plc"]'):
-#            time = post.xpath('.//div[@class="authi"]/em/text()').extract_first()
-#            content = ''.join(post.xpath('.//div[@class="t_fsz"]/node()').extract())
-#            if not time or not content:
-#                continue
-#            replies.append({
-#                'time' : time,
-#                'content' : content
-#            })
-#        if replies:
-#            data['content'] = replies[0]['content']
-#            data['replies'] = replies[1:]
-#        self.logger.info('qunar bbs: %s' % json.dumps(data, ensure_ascii=False).encode('utf-8'))
-#
-#
+    handle_httpstatus_list = [500]
+
+    custom_settings = {
+        'DOWNLOAD_TIMEOUT' : 10,
+        'DOWNLOAD_DELAY' : 0.3,
+        'RETRY_ENABLED' : False
+    }
+
+    bbs_api = (
+        #(u'http://bbs.tuniu.com/forum.php?mod=forumdisplay&fid=64&filter=typeid&typeid=757&orderby=replies&page=%d', u'同城攻略', u'469'),
+        (u'http://bbs.tuniu.com/forum.php?mod=forumdisplay&fid=64&filter=typeid&typeid=758&orderby=replies&page=%d', u'版主年末游记', u'198'),
+        (u'http://bbs.tuniu.com/forum.php?mod=forumdisplay&fid=64&filter=typeid&typeid=409&orderby=replies&page=%d', u'马尔代夫', u'1061'),
+        (u'http://bbs.tuniu.com/forum.php?mod=forumdisplay&fid=64&filter=typeid&typeid=4&orderby=replies&page=%d', u'云南', u'1026'),
+        (u'http://bbs.tuniu.com/forum.php?mod=forumdisplay&fid=64&filter=typeid&typeid=5&orderby=replies&page=%d', u'海南', u'615'),
+        (u'http://bbs.tuniu.com/forum.php?mod=forumdisplay&fid=64&filter=typeid&typeid=747&orderby=replies&page=%d', u'普吉岛', u'491'),
+        (u'http://bbs.tuniu.com/forum.php?mod=forumdisplay&fid=64&filter=typeid&typeid=419&orderby=replies&page=%d', u'福建', u'478'),
+        (u'http://bbs.tuniu.com/forum.php?mod=forumdisplay&fid=64&filter=typeid&typeid=422&orderby=replies&page=%d', u'湖南', u'436'),
+        (u'http://bbs.tuniu.com/forum.php?mod=forumdisplay&fid=64&filter=typeid&typeid=423&orderby=replies&page=%d', u'四川', u'587'),
+        (u'http://bbs.tuniu.com/forum.php?mod=forumdisplay&fid=64&filter=typeid&typeid=425&orderby=replies&page=%d', u'山西', u'216'),
+        (u'http://bbs.tuniu.com/forum.php?mod=forumdisplay&fid=64&filter=typeid&typeid=426&orderby=replies&page=%d', u'河南', u'134'),
+        (u'http://bbs.tuniu.com/forum.php?mod=forumdisplay&fid=64&filter=typeid&typeid=428&orderby=replies&page=%d', u'江西', u'193'),
+        (u'http://bbs.tuniu.com/forum.php?mod=forumdisplay&fid=64&filter=typeid&typeid=429&orderby=replies&page=%d', u'广东', u'281'),
+        (u'http://bbs.tuniu.com/forum.php?mod=forumdisplay&fid=64&filter=typeid&typeid=420&orderby=replies&page=%d', u'安徽', u'499'),
+        (u'http://bbs.tuniu.com/forum.php?mod=forumdisplay&fid=64&filter=typeid&typeid=418&orderby=replies&page=%d', u'广西', u'384'),
+        (u'http://bbs.tuniu.com/forum.php?mod=forumdisplay&fid=64&filter=typeid&typeid=431&orderby=replies&page=%d', u'山东', u'292'),
+        (u'http://bbs.tuniu.com/forum.php?mod=forumdisplay&fid=64&filter=typeid&typeid=434&orderby=replies&page=%d', u'西藏', u'393'),
+        (u'http://bbs.tuniu.com/forum.php?mod=forumdisplay&fid=64&filter=typeid&typeid=435&orderby=replies&page=%d', u'陕西', u'227'),
+        (u'http://bbs.tuniu.com/forum.php?mod=forumdisplay&fid=64&filter=typeid&typeid=661&orderby=replies&page=%d', u'浙江', u'912'),
+        (u'http://bbs.tuniu.com/forum.php?mod=forumdisplay&fid=64&filter=typeid&typeid=662&orderby=replies&page=%d', u'江苏', u'865'),
+        (u'http://bbs.tuniu.com/forum.php?mod=forumdisplay&fid=64&filter=typeid&typeid=663&orderby=replies&page=%d', u'青海', u'85'),
+        (u'http://bbs.tuniu.com/forum.php?mod=forumdisplay&fid=64&filter=typeid&typeid=664&orderby=replies&page=%d', u'贵州', u'77'),
+        (u'http://bbs.tuniu.com/forum.php?mod=forumdisplay&fid=64&filter=typeid&typeid=665&orderby=replies&page=%d', u'黑龙江', u'110'),
+        (u'http://bbs.tuniu.com/forum.php?mod=forumdisplay&fid=64&filter=typeid&typeid=666&orderby=replies&page=%d', u'内蒙古', u'230'),
+        (u'http://bbs.tuniu.com/forum.php?mod=forumdisplay&fid=64&filter=typeid&typeid=667&orderby=replies&page=%d', u'湖北', u'191'),
+        (u'http://bbs.tuniu.com/forum.php?mod=forumdisplay&fid=64&filter=typeid&typeid=668&orderby=replies&page=%d', u'新疆', u'103'),
+        (u'http://bbs.tuniu.com/forum.php?mod=forumdisplay&fid=64&filter=typeid&typeid=672&orderby=replies&page=%d', u'河北', u'147'),
+        (u'http://bbs.tuniu.com/forum.php?mod=forumdisplay&fid=64&filter=typeid&typeid=416&orderby=replies&page=%d', u'辽宁', u'145'),
+        (u'http://bbs.tuniu.com/forum.php?mod=forumdisplay&fid=64&filter=typeid&typeid=421&orderby=replies&page=%d', u'吉林', u'126'),
+        (u'http://bbs.tuniu.com/forum.php?mod=forumdisplay&fid=64&filter=typeid&typeid=669&orderby=replies&page=%d', u'北京', u'589'),
+        (u'http://bbs.tuniu.com/forum.php?mod=forumdisplay&fid=64&filter=typeid&typeid=670&orderby=replies&page=%d', u'上海', u'202'),
+        (u'http://bbs.tuniu.com/forum.php?mod=forumdisplay&fid=64&filter=typeid&typeid=673&orderby=replies&page=%d', u'天津', u'68'),
+        (u'http://bbs.tuniu.com/forum.php?mod=forumdisplay&fid=64&filter=typeid&typeid=674&orderby=replies&page=%d', u'重庆', u'146'),
+        (u'http://bbs.tuniu.com/forum.php?mod=forumdisplay&fid=64&filter=typeid&typeid=3&orderby=replies&page=%d', u'港澳', u'691'),
+        (u'http://bbs.tuniu.com/forum.php?mod=forumdisplay&fid=64&filter=typeid&typeid=412&orderby=replies&page=%d', u'东南亚', u'1327'),
+        (u'http://bbs.tuniu.com/forum.php?mod=forumdisplay&fid=64&filter=typeid&typeid=413&orderby=replies&page=%d', u'日本', u'487'),
+        (u'http://bbs.tuniu.com/forum.php?mod=forumdisplay&fid=64&filter=typeid&typeid=745&orderby=replies&page=%d', u'韩国', u'573'),
+        (u'http://bbs.tuniu.com/forum.php?mod=forumdisplay&fid=64&filter=typeid&typeid=414&orderby=replies&page=%d', u'欧洲', u'1307'),
+        (u'http://bbs.tuniu.com/forum.php?mod=forumdisplay&fid=64&filter=typeid&typeid=415&orderby=replies&page=%d', u'澳洲', u'249'),
+        (u'http://bbs.tuniu.com/forum.php?mod=forumdisplay&fid=64&filter=typeid&typeid=424&orderby=replies&page=%d', u'中东', u'169'),
+        (u'http://bbs.tuniu.com/forum.php?mod=forumdisplay&fid=64&filter=typeid&typeid=427&orderby=replies&page=%d', u'美洲', u'327'),
+        (u'http://bbs.tuniu.com/forum.php?mod=forumdisplay&fid=64&filter=typeid&typeid=756&orderby=replies&page=%d', u'沙巴', u'50'),
+        (u'http://bbs.tuniu.com/forum.php?mod=forumdisplay&fid=64&filter=typeid&typeid=755&orderby=replies&page=%d', u'塞舌尔', u'29'),
+        (u'http://bbs.tuniu.com/forum.php?mod=forumdisplay&fid=64&filter=typeid&typeid=754&orderby=replies&page=%d', u'斐济', u'35'),
+        (u'http://bbs.tuniu.com/forum.php?mod=forumdisplay&fid=64&filter=typeid&typeid=753&orderby=replies&page=%d', u'巴厘岛', u'335'),
+        (u'http://bbs.tuniu.com/forum.php?mod=forumdisplay&fid=64&filter=typeid&typeid=752&orderby=replies&page=%d', u'台湾', u'232'),
+        (u'http://bbs.tuniu.com/forum.php?mod=forumdisplay&fid=64&filter=typeid&typeid=751&orderby=replies&page=%d', u'长滩岛', u'192'),
+        (u'http://bbs.tuniu.com/forum.php?mod=forumdisplay&fid=64&filter=typeid&typeid=750&orderby=replies&page=%d', u'济州岛', u'61'),
+        (u'http://bbs.tuniu.com/forum.php?mod=forumdisplay&fid=64&filter=typeid&typeid=749&orderby=replies&page=%d', u'毛里求斯', u'105'),
+        (u'http://bbs.tuniu.com/forum.php?mod=forumdisplay&fid=64&filter=typeid&typeid=748&orderby=replies&page=%d', u'塞班', u'343'),
+        (u'http://bbs.tuniu.com/forum.php?mod=forumdisplay&fid=64&filter=typeid&typeid=746&orderby=replies&page=%d', u'非洲', u'275'),
+        (u'http://bbs.tuniu.com/forum.php?mod=forumdisplay&fid=64&filter=typeid&typeid=432&orderby=replies&page=%d', u'邮轮', u'110'),
+        (u'http://bbs.tuniu.com/forum.php?mod=forumdisplay&fid=64&filter=typeid&typeid=671&orderby=replies&page=%d', u'其它', u'294'),
+        (u'http://bbs.tuniu.com/forum.php?mod=forumdisplay&fid=64&filter=typeid&typeid=769&orderby=replies&page=%d', u'桂林', u'9'),
+        (u'http://bbs.tuniu.com/forum.php?mod=forumdisplay&fid=64&filter=typeid&typeid=768&orderby=replies&page=%d', u'甘肃', u'16'),
+        (u'http://bbs.tuniu.com/forum.php?mod=forumdisplay&fid=64&filter=sortid&sortid=3&orderby=replies&page=%d', u'有订单游记', u'8060'),
+        (u'http://bbs.tuniu.com/forum.php?mod=forumdisplay&fid=64&filter=sortid&sortid=9&orderby=replies&page=%d', u'无订单游记', u'10491'),
+    )
+
+    HEADERS = {
+        'Accept' : 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+        'Accept-Encoding' : 'gzip, deflate, sdch',
+        'Accept-Language' : 'zh-CN,zh;q=0.8,en;q=0.6',
+        'Host' : 'bbs.tuniu.com'
+    }
+
+    def start_requests(self):
+        for gonglue_item in self.bbs_api:
+            meta = {}
+            meta['main_class'] = gonglue_item[1]
+            for page in range(int(gonglue_item[2])/50+1):
+                yield Request(gonglue_item[0] % (page + 1), meta=meta, headers=self.HEADERS, dont_filter=True, callback=self.parse_list)
+
+    def parse_list(self, response):
+        meta = response.meta
+        selector = Selector(response)
+        for tiezi in selector.xpath('//form[@id="moderate"]/table/tbody/tr'):
+            title = tiezi.xpath('./th/a[1]/text()').extract_first()
+            author = tiezi.xpath('./th/div[2]/i[@class="z"]/a/span/text()').extract_first()
+            date = tiezi.xpath('./th/div[@class="foruminfo"]/i[@class="z"]/span[1]/text()').extract_first()
+            view_count = tiezi.xpath('./th/div[@class="foruminfo"]/i[@class="y"]/span[2]/text()').extract_first()
+            comment_count = tiezi.xpath('./th/div[@class="foruminfo"]/i[@class="y"]/span[1]/text()').extract_first()
+            url = tiezi.xpath('./th/a[1]/@href').extract_first()
+
+            pages = tiezi.xpath('./th/span[@class="tps"]/a[last()]/text()').extract_first()
+
+            self.logger.info('title : %s, author : %s, date : %s, pages : %s' %  (title, author, date, pages))
+            if not title or not author or not date:
+                continue
+            date += ':00'
+            url = 'http://bbs.tuniu.com/' + url
+
+            data = {
+                'host' : 'tuniu',
+                'main_class' : meta['main_class'],
+                'title' : title,
+                'author' : author,
+                'date' : date,
+                'view_count' : view_count,
+                'comment_count' : comment_count,
+                'url' : url
+            }
+            for page in range(int(pages)):
+                api = url + ('&page=%d' % (page+1))
+                meta = meta.copy()
+                meta['page'] = page+1
+                meta['data'] = data
+                yield Request(api, meta=meta, headers=self.HEADERS, dont_filter=True, callback=self.parse_content)
+
+    def parse_content(self, response):
+        meta = response.meta.copy()
+        data = response.meta['data']
+        selector = Selector(response)
+        replies = []
+        for post in selector.xpath('//div[@id="postlist"]/div/table/tr[1]'):
+            date = post.xpath('./td[@class="plc"]//div[@class="authi"]/em/text()').extract_first()
+            content = ''.join(post.xpath('./td[@class="plc"]//div[@class="pcb"]/node()').extract())
+            author = post.xpath('./td[@class="plc"]//div[@class="authi"]/em/a/text()').extract_first()
+            if not date or not content:
+                continue
+            date = date.replace(u'发表于 ', '') + ':00'
+            replies.append({
+                'date' : date,
+                'content' : remove_tags(content).replace('\r\n', ''),
+                'author' : author
+            })
+        if replies:
+            if meta.get('page') == 1:
+                data['content'] = remove_tags(replies[0]['content'])
+                data['floor'] = '0'
+                self.logger.info('lvmama bbs: %s' % json.dumps(data, ensure_ascii=False).encode('utf-8'))
+
+            for i, reply in enumerate(replies[1:]):
+                result = data.copy()
+                result.update(reply)
+                floor = str(meta.get('page', 0)*30 + i + 1)
+                result.update({
+                    'floor' : floor,
+                    'view_count' : 0,
+                    'comment_count' : 0
+                })
+                self.logger.info('lvmama bbs: %s' % json.dumps(result, ensure_ascii=False).encode('utf-8'))
+
