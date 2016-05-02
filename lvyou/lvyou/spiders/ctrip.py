@@ -71,12 +71,16 @@ class CtripSpider(scrapy.Spider):
         selector = Selector(response)
         for gonglue in selector.xpath('//ul[@id="divGuideBookList"]/li'):
             name = gonglue.xpath('./a/@title').extract_first()
+            url = 'http://you.ctrip.com' + gonglue.xpath('./a/@href').extract_first()
+            date = gonglue.xpath('./span/text()').extract_first().replace(u'更新', ' 00:00:00')
             download_count = gonglue.xpath('./span/em/text()').extract_first()
             result = {
                 'main_class' : meta['main_class'],
                 'second_class' : meta['second_class'],
                 'gonglue_name' : name,
-                'download_count' : download_count
+                'download_count' : download_count,
+                'date' : date,
+                'url' : url
             }
             #self.logger.info('攻略下载 : %s\t%s\t%s' % (name, download_count, meta['mark']))
             self.logger.info('ctrip gonglue : %s' % json.dumps(result, ensure_ascii=False).encode('utf-8'))
