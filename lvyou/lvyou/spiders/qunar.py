@@ -68,6 +68,8 @@ class QunarSpider(scrapy.Spider):
         forward = ''.join(selector.xpath('//div[@id="b_foreword"]/node()').extract())
         scheduler = ''.join(selector.xpath('//div[@id="b_panel_schedule"]/node()').extract())
         content = remove_tags(forward+scheduler)
+        if not content or len(content) == 0:
+            content = remove_tags(''.join(selector.xpath('//div[@class="b_schedule"]/node()').extract()))
         result = meta['result']
         result['content'] = content
         self.logger.info('qunar gonglue : %s' % json.dumps(result, ensure_ascii=False).encode('utf-8'))
