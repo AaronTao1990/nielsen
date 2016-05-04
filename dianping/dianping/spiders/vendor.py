@@ -69,14 +69,15 @@ class VendorSpider(scrapy.Spider):
         if meta.get('first_page'):
             meta['first_page'] = False
             pages = selector.xpath('//div[@class="page"]/a[@class="PageLink"][last()]/text()').extract_first()
-            self.logger.debug('pages : %s' % pages)
-            for page in range(int(pages)):
-                api = self.search_api % (meta['city']['citycode'], urllib.quote(meta.get('target').encode('utf-8'))) + ('/p%d' % (page+1))
-                headers = self.HEADERS.copy()
-                headers['Referer'] = meta['city']['url']
-                yield Request(api, meta=meta, headers=headers, callback=self.parse_first_page)
-                #return # only one page
-            return
+            if pages:
+                self.logger.debug('pages : %s' % pages)
+                for page in range(int(pages)):
+                    api = self.search_api % (meta['city']['citycode'], urllib.quote(meta.get('target').encode('utf-8'))) + ('/p%d' % (page+1))
+                    headers = self.HEADERS.copy()
+                    headers['Referer'] = meta['city']['url']
+                    yield Request(api, meta=meta, headers=headers, callback=self.parse_first_page)
+                    #return # only one page
+                return
 
         # deal with real dianpu
         for dianpu in selector.xpath('//div[@id="shop-all-list"]/ul/li'):
