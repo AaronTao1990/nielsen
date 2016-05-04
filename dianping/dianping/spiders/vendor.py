@@ -13,8 +13,8 @@ class VendorSpider(scrapy.Spider):
         'http://www.dianping.com/',
     )
 
-    #search_api = 'http://www.dianping.com/search/keyword/%s/0_%s'
-    search_api = 'http://localhost:5000/search/keyword/%s/0_%s'
+    search_api = 'http://www.dianping.com/search/keyword/%s/0_%s'
+    #search_api = 'http://localhost:5000/search/keyword/%s/0_%s'
 
     targets = (
         u'肯德基',
@@ -44,7 +44,7 @@ class VendorSpider(scrapy.Spider):
                 headers = self.HEADERS.copy()
                 headers['Referer'] = city.get('url')
                 yield Request(api, meta={'city' : city, 'api_confirmed' : False, 'first_page' : True, 'target' : target}, headers=headers, callback=self.parse_first_page)
-                return # only one city
+                #return # only one city
 
     def parse_first_page(self, response):
         meta = response.meta
@@ -68,14 +68,14 @@ class VendorSpider(scrapy.Spider):
         # deal with pages
         if meta.get('first_page'):
             meta['first_page'] = False
-            pages = selector.xpath('//div[@class="page"]/a[@class="PageLink"]/text()').extract_first()
+            pages = selector.xpath('//div[@class="page"]/a[@class="PageLink"][last()]/text()').extract_first()
             self.logger.debug('pages : %s' % pages)
-            for pages in range(int(pages)):
-                api = self.search_api % (meta['city']['citycode'], urllib.quote(meta.get('target').encode('utf-8')))
+            for page in range(int(pages)):
+                api = self.search_api % (meta['city']['citycode'], urllib.quote(meta.get('target').encode('utf-8'))) + ('/p%d' % (page+1))
                 headers = self.HEADERS.copy()
                 headers['Referer'] = meta['city']['url']
                 yield Request(api, meta=meta, headers=headers, callback=self.parse_first_page)
-                return # only one page
+                #return # only one page
             return
 
         # deal with real dianpu
@@ -91,12 +91,12 @@ class VendorSpider(scrapy.Spider):
             category = dianpu.xpath('.//div[@class="tag-addr"]/a[1]/span/text()').extract_first()
             addr_first = dianpu.xpath('.//div[@class="tag-addr"]/a[2]/span/text()').extract_first()
             addr_second = dianpu.xpath('.//div[@class="tag-addr"]/span[@class="addr"]/text()').extract_first()
-            addr = str(addr_first) + str(addr_second)
+            addr = addr_first + '|' + addr_second
 
             data = {
                 'city_area' : meta['city']['area'],
                 'city_name' : meta['city']['name'],
-                'city_province' : meta['city']['province'],
+                'city_province' : meta['city'].get('province'),
                 'confirmed_fendian' : meta.get('api_confirmed_fendian'),
                 'dianpu_name' : dianpu_name,
                 'url' : url,
