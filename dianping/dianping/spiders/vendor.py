@@ -91,7 +91,11 @@ class VendorSpider(scrapy.Spider):
 
             category = dianpu.xpath('.//div[@class="tag-addr"]/a[1]/span/text()').extract_first()
             addr_first = dianpu.xpath('.//div[@class="tag-addr"]/a[2]/span/text()').extract_first()
+            if not addr_first:
+                addr_first = ''
             addr_second = dianpu.xpath('.//div[@class="tag-addr"]/span[@class="addr"]/text()').extract_first()
+            if not addr_second:
+                addr_second = ''
             addr = addr_first + '|' + addr_second
 
             data = {
