@@ -17,6 +17,5 @@ class RandomProxy(object):
             return
         try:
             spider.failed_proxy(proxy)
-            spider.logger.error('try to remove proxy')
         except ValueError:
             pass

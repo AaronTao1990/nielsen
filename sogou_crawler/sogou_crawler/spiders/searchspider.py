@@ -30,6 +30,7 @@ class BaseSpider(scrapy.Spider):
             self.failed_times[proxy] = 0
         self.failed_times[proxy] += 1
         if self.failed_times.get('proxy', 0) > 10:
+            self.logger.info('try to remove proxy : %s' % proxy)
             self.keywords_dao.remove_proxy(proxy)
 
 class QunarSpider(BaseSpider):
