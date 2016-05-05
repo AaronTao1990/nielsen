@@ -926,8 +926,19 @@ class TuniuSpider(scrapy.Spider):
                 })
             result = meta['result']
             result['comments'] = comments
-            self.logger.info('tuniu youji : %s' % json.dumps(result, ensure_ascii=False).encode('utf-8'))
+            #self.logger.info('tuniu youji : %s' % json.dumps(result, ensure_ascii=False).encode('utf-8'))
+            yield Request(result['url'], headers=self.HEADERS, meta={'result' : result}, callback=self.parse_content)
 
+    def parse_content(self, response):
+        result = response.meta['result']
+        selector = Selector(response)
+        content = ''.join(selector.xpath('//div[@class="blog-main"]/node()').extract())
+        if content:
+            content = remove_tags(content)
+            result['content'] = content
+            self.logger.info('tuniu youji : %s' % json.dumps(result, ensure_ascii=False).encode('utf-8'))
+        else:
+            self.logger.error('failed to get content')
 
 class TuniuBBSSpider(scrapy.Spider):
     name = 'tuniu_bbs'
