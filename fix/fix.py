@@ -49,11 +49,11 @@ def get_content(task, proxy):
 
     try:
         response = None
-        response = fetch_html(task['url'], headers=HEADERS, use_proxy=True, proxy_addr=proxy)
-        #if proxy == 'no':
-        #    response = fetch_html(task['url'], headers=HEADERS)
-        #else:
-        #    response = fetch_html(task['url'], headers=HEADERS, use_proxy=True, proxy_addr=proxy)
+        #response = fetch_html(task['url'], headers=HEADERS, use_proxy=True, proxy_addr=proxy)
+        if proxy == 'no':
+            response = fetch_html(task['url'], headers=HEADERS)
+        else:
+            response = fetch_html(task['url'], headers=HEADERS, use_proxy=True, proxy_addr=proxy)
         selector = Selector(text=response)
         forward = ''.join(selector.xpath('//div[@id="b_foreword"]/node()').extract())
         scheduler = ''.join(selector.xpath('//div[@id="b_panel_schedule"]/node()').extract())
@@ -73,7 +73,7 @@ def main(filename, s_filename, f_filename, interval, proxy):
     s_f = open(s_filename, 'a')
     f_f = open(f_filename, 'a')
     for task in load_tasks(filename):
-        status, content = get_content_proxy(task, proxy)
+        status, content = get_content(task, proxy)
         if status == 'success':
             task['content'] = content
             s_f.write(json.dumps(task, ensure_ascii=False).encode('utf-8') + '\n')
