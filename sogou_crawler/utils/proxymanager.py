@@ -16,7 +16,7 @@ class RandomProxy(object):
             spider.logger.error('invalid proxy')
             return
         try:
-            self.spider.keywords_dao.failed_proxy(proxy)
-            self.spider.logger.error('try to remove proxy')
+            spider.keywords_dao.failed_proxy(proxy)
+            spider.logger.error('try to remove proxy')
         except ValueError:
             pass
