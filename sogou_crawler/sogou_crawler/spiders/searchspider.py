@@ -83,7 +83,7 @@ class TuniuSpider(BaseSpider):
     }
 
     def __init__(self):
-        super(QunarSpider, self).__init__()
+        super(TuniuSpider, self).__init__()
 
     def save_doc(self, url, response):
         pass
