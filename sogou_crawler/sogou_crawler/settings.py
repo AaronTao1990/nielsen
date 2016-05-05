@@ -29,7 +29,8 @@ REDIS_CONFIG = {
     'port' : 6379,
     #'host' : '10.111.0.12',
     #'port' : 6380,
-    'ntasks' : 'qunar'
+    'ntasks' : 'qunar',
+    'proxy' : 'proxy'
 }
 
 DOWNLOADER_MIDDLEWARES = {
