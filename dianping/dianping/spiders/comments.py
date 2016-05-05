@@ -76,6 +76,7 @@ class CommentsSpider(scrapy.Spider):
                 'rating_huanjing' : rating_huanjing,
                 'rating_fuwu' : rating_fuwu,
                 'comment_content' : comment_content,
-                'date' : date
+                'date' : date,
+                'task' : meta['task']
             }
             self.logger.info('comment item : %s' % json.dumps(result, ensure_ascii=False).encode('utf-8'))
