@@ -20,6 +20,6 @@ class KeywordsDao(object):
     def remove_proxy(self, proxy):
         self.redis_cli.srem(self.REDIS_CONFIG['proxy'], proxy)
 
-    def remove_task(self, task, queue):
+    def remove_task(self, queue, task):
         self.redis_cli.srem(queue, task)
 
