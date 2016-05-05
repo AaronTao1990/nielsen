@@ -19,10 +19,24 @@ def get_proxy():
     del ips[0]
     return ip
 
+current_proxy = get_proxy()
+
 def load_tasks(filename):
     with open(filename, 'r') as f:
         for line in f.readlines():
             yield json.loads(line.strip('\n'))
+
+
+def get_content_proxy(task, proxy):
+    global current_proxy
+    for i in range(3):
+        status, content = get_content(task, current_proxy)
+        if status == 'success':
+            return status, content
+        else:
+            current_proxy = get_proxy()
+    return status, content
+
 
 def get_content(task, proxy):
     HEADERS = {
@@ -35,7 +49,6 @@ def get_content(task, proxy):
 
     try:
         response = None
-        proxy = get_proxy()
         response = fetch_html(task['url'], headers=HEADERS, use_proxy=True, proxy_addr=proxy)
         #if proxy == 'no':
         #    response = fetch_html(task['url'], headers=HEADERS)
@@ -60,7 +73,7 @@ def main(filename, s_filename, f_filename, interval, proxy):
     s_f = open(s_filename, 'a')
     f_f = open(f_filename, 'a')
     for task in load_tasks(filename):
-        status, content = get_content(task, proxy)
+        status, content = get_content_proxy(task, proxy)
         if status == 'success':
             task['content'] = content
             s_f.write(json.dumps(task, ensure_ascii=False).encode('utf-8') + '\n')
