@@ -14,7 +14,7 @@ BOT_NAME = 'sogou_crawler'
 SPIDER_MODULES = ['sogou_crawler.spiders']
 NEWSPIDER_MODULE = 'sogou_crawler.spiders'
 
-CONCURRENT_REQUESTS = 1
+CONCURRENT_REQUESTS = 60
 DOWNLOAD_DELAY = 0.8
 RANDOMIZE_DOWNLOAD_DELAY = True
 
