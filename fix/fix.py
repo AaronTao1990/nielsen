@@ -6,6 +6,19 @@ from optparse import OptionParser
 import time
 
 
+def get_proxy():
+    ips = []
+    def get_new_ips():
+        api = 'http://api.zdaye.com/?api=201605051157596943&pw=123&checktime=1%D0%A1%CA%B1%C4%DA&gb=2'
+        resp = fetch_html(api)
+        for line in resp.split('\n'):
+            ips.append('http://' + line)
+    if not ips:
+        get_new_ips()
+    ip = ips[0]
+    del ips[0]
+    return ip
+
 def load_tasks(filename):
     with open(filename, 'r') as f:
         for line in f.readlines():
@@ -22,10 +35,12 @@ def get_content(task, proxy):
 
     try:
         response = None
-        if proxy == 'no':
-            response = fetch_html(task['url'], headers=HEADERS)
-        else:
-            response = fetch_html(task['url'], headers=HEADERS, use_proxy=True, proxy_addr=proxy)
+        proxy = get_proxy()
+        response = fetch_html(task['url'], headers=HEADERS, use_proxy=True, proxy_addr=proxy)
+        #if proxy == 'no':
+        #    response = fetch_html(task['url'], headers=HEADERS)
+        #else:
+        #    response = fetch_html(task['url'], headers=HEADERS, use_proxy=True, proxy_addr=proxy)
         selector = Selector(text=response)
         forward = ''.join(selector.xpath('//div[@id="b_foreword"]/node()').extract())
         scheduler = ''.join(selector.xpath('//div[@id="b_panel_schedule"]/node()').extract())
