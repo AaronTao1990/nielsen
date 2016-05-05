@@ -926,8 +926,8 @@ class TuniuSpider(scrapy.Spider):
                 })
             result = meta['result']
             result['comments'] = comments
-            #self.logger.info('tuniu youji : %s' % json.dumps(result, ensure_ascii=False).encode('utf-8'))
-            yield Request(result['url'], headers=self.HEADERS, meta={'result' : result}, callback=self.parse_content)
+            self.logger.info('tuniu youji : %s' % json.dumps(result, ensure_ascii=False).encode('utf-8'))
+            #yield Request(result['url'], headers=self.HEADERS, meta={'result' : result}, callback=self.parse_content)
 
     def parse_content(self, response):
         result = response.meta['result']
