@@ -16,6 +16,10 @@ NEWSPIDER_MODULE = 'dianping.spiders'
 
 CITYCODE_FILE = 'citycode.txt'
 
+CONCURRENT_REQUESTS = 1
+DOWNLOAD_DELAY = 5
+DOWNLOAD_TIMEOUT = 5
+
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
 #USER_AGENT = 'dianping (+http://www.yourdomain.com)'
 
