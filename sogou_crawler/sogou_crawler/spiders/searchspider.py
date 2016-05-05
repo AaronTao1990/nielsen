@@ -100,7 +100,7 @@ class TuniuSpider(BaseSpider):
                 self.logger.info('success task : %s' % json.dumps(task, ensure_ascii=False).encode('utf-8'))
                 task['content'] = content
                 self.logger.info('success task result : %s' % json.dumps(task, ensure_ascii=False).encode('utf-8'))
-                self.keywords_dao.remove_task(response.meta['task_str'])
+                self.keywords_dao.remove_task(self.queue, response.meta['task_str'])
         except Exception:
             self.logger.info('failed task : %s' % json.dumps(task, ensure_ascii=False).encode('utf-8'))
 
