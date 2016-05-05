@@ -12,8 +12,8 @@ class KeywordsDao(object):
         logging.info('redis host : %s' % self.REDIS_CONFIG['host'])
         logging.info('redis queue: %s' % self.REDIS_CONFIG['ntasks'])
 
-    def get_tasks(self):
-        return self.redis_cli.srandmember(self.REDIS_CONFIG['ntasks'])
+    def get_tasks(self, queue):
+        return self.redis_cli.srandmember(queue)
 
     def get_proxy(self):
         return self.redis_cli.srandmember(self.REDIS_CONFIG['proxy'])
@@ -21,6 +21,6 @@ class KeywordsDao(object):
     def remove_proxy(self, proxy):
         self.redis_cli.srem(self.REDIS_CONFIG['proxy'], proxy)
 
-    def remove_task(self, task):
-        self.redis_cli.srem(self.REDIS_CONFIG['ntasks'], task)
+    def remove_task(self, task, queue):
+        self.redis_cli.srem(queue, task)
 

@@ -8,7 +8,6 @@ logger = logging.getLogger(__name__)
 redis_config = {
     'host' : '10.111.0.12',
     'port' : 6380,
-    'ntasks' : 'ntasks',
     'proxy' : 'proxy'
 }
 
