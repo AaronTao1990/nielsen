@@ -24,6 +24,8 @@ COOKIES_ENABLES=False
 
 USE_PROXY = False
 
+RETRY_ENABLED = False
+
 REDIS_CONFIG = {
     'host' : '172.31.18.41',
     'port' : 6379,
