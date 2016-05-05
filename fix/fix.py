@@ -22,7 +22,7 @@ def get_content(task, proxy):
 
     try:
         response = None
-        if proxy != 'no':
+        if proxy == 'no':
             response = fetch_html(task['url'], headers=HEADERS)
         else:
             response = fetch_html(task['url'], headers=HEADERS, use_proxy=True, proxy_addr=proxy)
