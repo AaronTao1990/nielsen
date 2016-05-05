@@ -25,10 +25,10 @@ COOKIES_ENABLES=False
 USE_PROXY = False
 
 REDIS_CONFIG = {
-    #'host' : '172.31.18.41',
-    #'port' : 6379,
-    'host' : '10.111.0.12',
-    'port' : 6380,
+    'host' : '172.31.18.41',
+    'port' : 6379,
+    #'host' : '10.111.0.12',
+    #'port' : 6380,
     'ntasks' : 'qunar'
 }
 
