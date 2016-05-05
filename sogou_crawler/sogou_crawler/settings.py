@@ -37,5 +37,8 @@ DOWNLOADER_MIDDLEWARES = {
     #'sogou_crawler.redirect_middleware.RedirectMiddleware' : 500,
     #'scrapy.downloadermiddlewares.cookies.CookiesMiddleware' : None,
     'scrapy.downloadermiddlewares.useragent.UserAgentMiddleware' : None,
-    'sogou_crawler.middlewares.rotate_useragent.RotateUserAgentMiddleware' : 400
+    'sogou_crawler.middlewares.rotate_useragent.RotateUserAgentMiddleware' : 400,
+    'utils.proxymanager.RandomProxy' : 100,
+    'scrapy.contrib.downloadermiddleware.httpproxy.HttpProxyMiddleware': 110,
 }
+

@@ -16,6 +16,7 @@ class BaseSpider(scrapy.Spider):
 
     def __init__(self):
         self.keywords_dao = KeywordsDao()
+        self.failed_times = {}
 
     def check_result(self, response, snuid):
         if 'antispider' in response.url or 'http://pb.sogou.com/pv.gif?uigs_productid=weixin&type=article&status=fail' in response.body:
@@ -23,6 +24,11 @@ class BaseSpider(scrapy.Spider):
 
     def save_doc(self, url, response):
         raise NotImplementedError()
+
+    def failed_proxy(self, proxy):
+        if self.failed_times.get('proxy', 0) > 10:
+            self.keywords_dao.remove_proxy(proxy)
+
 
 class QunarSpider(BaseSpider):
     name = 'qunar'
