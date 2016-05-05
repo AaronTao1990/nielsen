@@ -10,7 +10,6 @@ class KeywordsDao(object):
         self.REDIS_CONFIG = settings.get('REDIS_CONFIG')
         self.redis_cli = redis.Redis(host=self.REDIS_CONFIG['host'], port=self.REDIS_CONFIG['port'])
         logging.info('redis host : %s' % self.REDIS_CONFIG['host'])
-        logging.info('redis queue: %s' % self.REDIS_CONFIG['ntasks'])
 
     def get_tasks(self, queue):
         return self.redis_cli.srandmember(queue)
