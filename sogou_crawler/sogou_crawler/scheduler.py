@@ -32,11 +32,12 @@ class NielsenScheduler(BaseScheduler):
 
     def get_next_request(self):
         task_str = self.spider.keywords_dao.get_tasks()
-        self.spider.logger.info('task info : %s' % task_str)
+        proxy = self.spider.keywords_dao.get_proxy()
         task = json.loads(task_str)
         meta = {
             'task' : task,
-            'task_str' : task_str
+            'task_str' : task_str,
+            'proxy' : proxy
         }
         yield Request(url=task['url'],
                       meta=meta,
