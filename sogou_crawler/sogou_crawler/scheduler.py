@@ -37,7 +37,8 @@ class NielsenScheduler(BaseScheduler):
         meta = {
             'task' : task,
             'task_str' : task_str,
-            'proxy' : proxy
+            'proxy' : proxy,
+            'dont_redirect' : True
         }
         yield Request(url=task['url'],
                       meta=meta,
