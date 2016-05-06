@@ -20,12 +20,14 @@ class BaseSpider(scrapy.Spider):
         raise NotImplementedError()
 
     def failed_proxy(self, proxy):
-        if proxy not in self.failed_times.keys():
-            self.failed_times[proxy] = 0
-        self.failed_times[proxy] += 1
-        if self.failed_times.get(proxy, 0) > 20:
-            self.logger.info('try to remove proxy : %s' % proxy)
-            self.keywords_dao.remove_proxy(proxy)
+        #if proxy not in self.failed_times.keys():
+        #    self.failed_times[proxy] = 0
+        #self.failed_times[proxy] += 1
+        #if self.failed_times.get(proxy, 0) > 20:
+        #    self.logger.info('try to remove proxy : %s' % proxy)
+        #    self.keywords_dao.remove_proxy(proxy)
+        self.logger.info('try to remove proxy : %s' % proxy)
+        self.keywords_dao.remove_proxy(proxy)
 
 class QunarSpider(BaseSpider):
     name = 'qunar'
