@@ -33,10 +33,11 @@ class KeywordsGenerator(object):
             logger.error('exception : %s' % e)
 
     def publish_proxies(self):
-        api = 'http://api.zdaye.com/?api=201605051157596943&pw=123&checktime=1%D0%A1%CA%B1%C4%DA&gb=2'
+        api = 'http://api.zdaye.com/?api=201605061716313566&checktime=1%D0%A1%CA%B1%C4%DA&cunhuo=%B0%EB%D0%A1%CA%B1%D2%D4%C9%CF&gb=2'
         resp = fetch_html(api)
         try:
             for line in resp.split('\n'):
+                line = line.strip('\r')
                 proxy = 'http://' + line
                 self.redis_cli.sadd(redis_config['proxy'], proxy)
         except Exception:
