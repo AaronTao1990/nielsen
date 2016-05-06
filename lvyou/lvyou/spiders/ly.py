@@ -14,7 +14,7 @@ class LYSpider(scrapy.Spider):
         'DOWNLOAD_DELAY' : 0.3
     }
 
-    gonglue_api = ('http://go.ly.com/ajax/GetNewRaiderInfo?type=2&pageSize=12&pageindex=%d', 28)
+    gonglue_api = ('http://go.ly.com/ajax/GetNewRaiderInfo?type=2&desItemId=&desItemKind=&travelway=&pageSize=12&pageindex=%d&startTime=-1&endTime=&viewtype=1&iid=0.8534178737842524', 28)
 
     HEADERS = {
         'Host' : 'go.ly.com',
@@ -26,7 +26,7 @@ class LYSpider(scrapy.Spider):
 
     def start_requests(self):
         for page in range(self.gonglue_api[1]):
-            yield Request(self.gonglue_api[0] % (page + 1), headers=self.HEADERS, dont_filter=True, callback=self.parse_gonglue)
+            yield Request(self.gonglue_api[0] % (page + 10), headers=self.HEADERS, dont_filter=True, callback=self.parse_gonglue)
 
     def parse_gonglue(self, response):
         selector = Selector(response)
@@ -37,6 +37,14 @@ class LYSpider(scrapy.Spider):
             like_count = gonglue.xpath('./div[@class="youjiSource clearfix"]/span[@class="likeNub"]/text()').extract_first()
             url = gonglue.xpath('./a[@class="youjiPic"]/@href').extract_first()
 
+
+            if not title or not author or not view_count:
+                title = gonglue.xpath('.//a[@class="yj-name"]/text()').extract_first()
+                #author = gonglue.xpath('.//a[class="autor-name"]/text()').extract_first()
+                author = gonglue.xpath('.//div[@class="pinfo"]/a[1]/text()').extract_first()
+                view_count = gonglue.xpath('.//p[@class="viewlike clearfix"]/span[1]/text()').extract_first()
+                like_count = gonglue.xpath('.//p[@class="viewlike clearfix"]/span[2]/text()').extract_first()
+                url = gonglue.xpath('.//a[@class="yj-name"]/@href').extract_first()
             result = {
                 'title' : title,
                 'author' : author,
@@ -48,6 +56,7 @@ class LYSpider(scrapy.Spider):
             meta = response.meta.copy()
             meta['result'] = result
             yield Request(url, headers=self.HEADERS, meta=meta, dont_filter=True, callback=self.parse_content)
+            #self.logger.info('lv gonglue : %s' % json.dumps(result, ensure_ascii=False).encode('utf-8'))
 
     def parse_content(self, response):
         selector = Selector(response)
