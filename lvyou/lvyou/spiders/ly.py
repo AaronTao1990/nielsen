@@ -26,7 +26,7 @@ class LYSpider(scrapy.Spider):
 
     def start_requests(self):
         for page in range(self.gonglue_api[1]):
-            yield Request(self.gonglue_api[0] % (page + 10), headers=self.HEADERS, dont_filter=True, callback=self.parse_gonglue)
+            yield Request(self.gonglue_api[0] % (page), headers=self.HEADERS, dont_filter=True, callback=self.parse_gonglue)
 
     def parse_gonglue(self, response):
         selector = Selector(response)
@@ -55,8 +55,8 @@ class LYSpider(scrapy.Spider):
             #self.logger.info('lv gonglue : %s' % json.dumps(result, ensure_ascii=False).encode('utf-8'))
             meta = response.meta.copy()
             meta['result'] = result
-            yield Request(url, headers=self.HEADERS, meta=meta, dont_filter=True, callback=self.parse_content)
-            #self.logger.info('lv gonglue : %s' % json.dumps(result, ensure_ascii=False).encode('utf-8'))
+            #yield Request(url, headers=self.HEADERS, meta=meta, dont_filter=True, callback=self.parse_content)
+            self.logger.info('lv gonglue : %s' % json.dumps(result, ensure_ascii=False).encode('utf-8'))
 
     def parse_content(self, response):
         selector = Selector(response)

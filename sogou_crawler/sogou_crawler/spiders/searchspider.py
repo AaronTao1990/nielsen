@@ -4,6 +4,7 @@ from sogou_crawler.dao.keywords_dao import KeywordsDao
 from scrapy.selector import Selector
 from utils.htmlutils import remove_tags
 import json
+import re
 
 class BaseSpider(scrapy.Spider):
 
@@ -104,4 +105,52 @@ class TuniuSpider(BaseSpider):
         except Exception:
             self.logger.info('failed task : %s' % json.dumps(task, ensure_ascii=False).encode('utf-8'))
 
+
+class LYGonglueSpider(BaseSpider):
+    name = 'ly_gonglue'
+    queue = 'ly_gonglue'
+
+    HEADERS = {
+        'Host' : 'go.ly.com',
+        'Accept' : '*/*',
+        'Accept-Encoding' : 'gzip, deflate, sdch',
+        'Accept-Language' : 'en-US,en;q=0.8,zh-CN;q=0.6,zh;q=0.4,zh-TW;q=0.2,ja;q=0.2',
+        'Referer' : 'http://go.ly.com/'
+    }
+
+    custom_settings = {
+        'SCHEDULER' : 'sogou_crawler.scheduler.NielsenScheduler',
+    }
+
+    def __init__(self):
+        super(TuniuSpider, self).__init__()
+
+    def save_doc(self, url, response):
+        pass
+
+    def parse_api(self, response):
+        task = response.meta['task']
+        selector = Selector(response)
+
+        try:
+            date = selector.xpath('//span[@id="subtime"]/text()').extract_first().replace(u'发表时间：', '').strip(' \n\r')+':00'
+            content = ''.join(selector.xpath('//div[@id="content"]/node()').extract())
+            content = remove_tags(content).replace('\r\n', '')
+            content = re.sub('\s*\r\n\s*', '', content)
+            content = re.sub('\s*', '', content)
+
+            if not content or len(content) ==0 or not date:
+                self.logger.info('failed task : %s' % json.dumps(task, ensure_ascii=False).encode('utf-8'))
+            else:
+                self.logger.info('success task : %s' % json.dumps(task, ensure_ascii=False).encode('utf-8'))
+                task['content'] = content
+                task['date'] = date
+                self.logger.info('success task result : %s' % json.dumps(task, ensure_ascii=False).encode('utf-8'))
+                self.keywords_dao.remove_task(self.queue, response.meta['task_str'])
+        except Exception:
+            self.logger.info('failed task : %s' % json.dumps(task, ensure_ascii=False).encode('utf-8'))
+
+class LYYoujiSpider(LYGonglueSpider):
+    name = 'ly_youji'
+    queue = 'ly_youji'
 
