@@ -18,7 +18,7 @@ CONCURRENT_REQUESTS = 60
 DOWNLOAD_DELAY = 0.8
 RANDOMIZE_DOWNLOAD_DELAY = True
 
-DOWNLOAD_TIMEOUT = 10
+DOWNLOAD_TIMEOUT = 3
 
 COOKIES_ENABLES=False
 
@@ -39,7 +39,7 @@ DOWNLOADER_MIDDLEWARES = {
     #'scrapy.downloadermiddlewares.cookies.CookiesMiddleware' : None,
     'scrapy.downloadermiddlewares.useragent.UserAgentMiddleware' : None,
     'sogou_crawler.middlewares.rotate_useragent.RotateUserAgentMiddleware' : 400,
-    'utils.proxymanager.RandomProxy' : 100,
-    'scrapy.contrib.downloadermiddleware.httpproxy.HttpProxyMiddleware': 110,
+    #'utils.proxymanager.RandomProxy' : 100,
+    #'scrapy.contrib.downloadermiddleware.httpproxy.HttpProxyMiddleware': 110,
 }
 
