@@ -156,3 +156,39 @@ class LYYoujiSpider(LYGonglueSpider):
     name = 'ly_youji'
     queue = 'ly_youji'
 
+
+class CtripYoujiSpider(BaseSpider):
+    name = 'ctrip_youji'
+    queue = 'ctrip_youji'
+
+
+
+    HEADERS = {
+        'Accept:' : 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+        'Accept-Encoding' : 'gzip, deflate, sdch',
+        'Accept-Language' : 'zh-CN,zh;q=0.8,en;q=0.6',
+        'User-Agent' : 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/48.0.2564.116 Safari/537.36'
+    }
+
+    custom_settings = {
+        'SCHEDULER' : 'sogou_crawler.scheduler.NielsenScheduler',
+    }
+
+    def parse_api(self, response):
+        task = response.meta['task']
+        selector = Selector(response)
+
+        try:
+            content = ''.join(selector.xpath('//div[@class="ctd_main_body"]/node()').extract())
+            content = remove_tags(content).replace('\r\n', '')
+            content = re.sub('\s*', '', content)
+
+            if not content or len(content) ==0:
+                self.logger.info('failed task : %s' % json.dumps(task, ensure_ascii=False).encode('utf-8'))
+            else:
+                self.logger.info('success task : %s' % json.dumps(task, ensure_ascii=False).encode('utf-8'))
+                task['content'] = content
+                self.logger.info('success task result : %s' % json.dumps(task, ensure_ascii=False).encode('utf-8'))
+                self.keywords_dao.remove_task(self.queue, response.meta['task_str'])
+        except Exception:
+            self.logger.info('failed task : %s' % json.dumps(task, ensure_ascii=False).encode('utf-8'))
